@@ -1,0 +1,70 @@
+from sqlalchemy import func, select
+
+from app.models import Conversation, Message, User
+from app.seed.build import seed_database
+from tests.helpers import db_call, login
+
+
+def _counts(client):
+    async def run(s):
+        users = await s.scalar(select(func.count(User.id)))
+        groups = await s.scalar(select(func.count(Conversation.id)).where(Conversation.kind == "group"))
+        directs = await s.scalar(select(func.count(Conversation.id)).where(Conversation.kind == "direct"))
+        messages = await s.scalar(select(func.count(Message.id)))
+        return users, groups, directs, messages
+
+    return db_call(client, run)
+
+
+def test_seed_creates_demo_world(seeded_client):
+    users, groups, directs, messages = _counts(seeded_client)
+    assert users == 8 and groups == 3 and directs >= 6 and messages >= 180
+
+
+def test_seed_is_idempotent(seeded_client):
+    before = _counts(seeded_client)
+    state = seeded_client.app.state
+    seeded_client.portal.call(seed_database, state.session_factory, state.settings, state.clock)
+    assert _counts(seeded_client) == before
+
+
+def test_demo_login_works(seeded_client):
+    r = seeded_client.post(
+        "/api/auth/verify-otp", json={"phone": "+15550100001", "code": "123456", "device_name": "pytest"}
+    ).json()
+    assert r["is_new_user"] is False and r["user"]["display_name"] == "Alice Chen"
+    assert r["user"]["username"] == "alice.01"
+
+
+def test_alice_has_unread(seeded_client):
+    a = login(seeded_client, "+15550100001")
+    convs = seeded_client.get("/api/conversations", headers=a.headers).json()
+    assert len([c for c in convs if c["unread_count"] > 0]) >= 2
+    assert any(c["is_note_to_self"] for c in convs)
+    assert {"Weekend Hike", "Family", "Project Phoenix"} <= {c["title"] for c in convs}
+
+
+def test_alice_sent_statuses_are_mixed(seeded_client):
+    """Alice's latest outgoing messages should show a mix of sent/delivered/read ticks."""
+    a = login(seeded_client, "+15550100001")
+    convs = seeded_client.get("/api/conversations", headers=a.headers).json()
+    states = set()
+    for c in convs:
+        last = c["last_message"]
+        if c["kind"] != "direct" or c["is_note_to_self"] or last["sender_id"] != a.user_id:
+            continue
+        other = next(m for m in c["members"] if m["user"]["id"] != a.user_id)
+        if (other["last_read_message_id"] or 0) >= last["id"]:
+            states.add("read")
+        elif (other["last_delivered_message_id"] or 0) >= last["id"]:
+            states.add("delivered")
+        else:
+            states.add("sent")
+    assert {"sent", "delivered"} <= states
+
+
+def test_no_future_timestamps(seeded_client, clock):
+    async def latest(s):
+        return await s.scalar(select(func.max(Message.created_at)))
+
+    assert db_call(seeded_client, latest) <= clock.now()

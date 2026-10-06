@@ -13,6 +13,7 @@ from app.errors import install_error_handlers
 from app.models import Base
 from app.realtime import ws_router
 from app.realtime.hub import Hub
+from app.seed.build import seed_database
 
 
 def create_app(settings: Settings | None = None, clock: Clock | None = None) -> FastAPI:
@@ -28,6 +29,8 @@ def create_app(settings: Settings | None = None, clock: Clock | None = None) -> 
         app.state.session_factory = create_session_factory(engine)
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
+        if settings.seed_on_empty:
+            await seed_database(app.state.session_factory, settings, clock)
         yield
         if app.state.background_tasks:  # let detached work (e.g. presence) finish
             await asyncio.wait(list(app.state.background_tasks), timeout=5)

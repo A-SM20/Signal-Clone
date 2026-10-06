@@ -43,3 +43,11 @@ def client_fast_timeouts(tmp_path, clock):
     app = create_app(make_settings(tmp_path, ws_auth_timeout_seconds=0.2, ws_idle_timeout_seconds=0.3), clock=clock)
     with TestClient(app) as c:
         yield c
+
+
+@pytest.fixture
+def seeded_client(tmp_path, clock):
+    settings = make_settings(tmp_path)
+    settings.seed_on_empty = True
+    with TestClient(create_app(settings, clock=clock)) as c:
+        yield c
