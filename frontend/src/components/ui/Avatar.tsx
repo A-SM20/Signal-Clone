@@ -1,4 +1,4 @@
-import { API_URL } from "@/lib/config";
+import { mediaUrl, reportBrokenMedia } from "@/lib/useSignedMedia";
 
 const SIZES = { sm: 28, md: 36, lg: 48, xl: 80 } as const;
 export type AvatarSize = keyof typeof SIZES;
@@ -12,9 +12,7 @@ export function initials(name: string): string {
   return first + Array.from(words[words.length - 1])[0].toUpperCase();
 }
 
-export function mediaUrl(path: string): string {
-  return path.startsWith("http") ? path : `${API_URL}${path}`;
-}
+export { mediaUrl };
 
 interface AvatarProps {
   name: string;
@@ -33,6 +31,7 @@ export function Avatar({ name, color, url, size = "lg", online, className = "" }
         // eslint-disable-next-line @next/next/no-img-element -- signed URLs from our API; no Next image optimizer in static export
         <img
           src={mediaUrl(url)}
+          onError={() => reportBrokenMedia(url)}
           alt={name}
           role="img"
           className="h-full w-full rounded-full object-cover"

@@ -34,7 +34,7 @@ function asMessage(e: OutboxEntry, meId: number, index: number): PendingMessage 
     reply_to: null,
     system_event: null,
     created_at: e.created_at,
-    attachments: [],
+    attachments: e.attachments ?? [],
     reactions: [],
     poll: null,
     pending: e,

@@ -35,8 +35,9 @@ GROUPS = {
     "phoenix": ("Project Phoenix", "Launch coordination — v2 ships Friday", ["daniel", "alice"], ["bob", "priya", "mei"]),
 }
 
-# Conversation scripts: (minutes ago of the first line, [(sender, minutes after previous line, text)]).
-SCRIPTS: dict[str, tuple[float, list[tuple[str, float, str]]]] = {
+# Conversation scripts: (minutes ago of the first line, [(sender, minutes after previous line, text[, media])]).
+# Optional media: {"images": [names]} or {"file": "name.pdf"} — generated at seed time (app/seed/media.py).
+SCRIPTS: dict[str, tuple[float, list[tuple]]] = {
     "alice_bob": (1940, [
         ("bob", 0, "Hey! Are you still up for the hike on Saturday?"),
         ("alice", 3, "Definitely. Which trail are we doing?"),
@@ -153,7 +154,7 @@ SCRIPTS: dict[str, tuple[float, list[tuple[str, float, str]]]] = {
         ("lucas", 4, "I can drive, I have room for 3"),
         ("alice", 1, "Amazing, Priya and I can ride with you"),
         ("priya", 3, "Perfect 👍"),
-        ("bob", 300, "Here's the trail map: 9.2 mi, 2,800 ft gain"),
+        ("bob", 300, "Here's the trail map: 9.2 mi, 2,800 ft gain", {"images": ["trail-map", "summit", "lake"]}),
         ("lucas", 5, "That's a workout 😅"),
         ("alice", 2, "We'll take breaks. Summit coffee is the reward"),
         ("priya", 1, "Wait there's coffee?"),
@@ -177,7 +178,7 @@ SCRIPTS: dict[str, tuple[float, list[tuple[str, float, str]]]] = {
         ("emma", 2, "Sunday dinner at mom's, 6pm"),
         ("mei", 5, "I'll bring wine 🍷"),
         ("alice", 2, "Dessert is on me"),
-        ("emma", 1600, "Photos from Sunday!"),
+        ("emma", 1600, "Photos from Sunday!", {"images": ["sunset"]}),
         ("mei", 3, "Aww these are so cute"),
         ("alice", 5, "The one with the kids and the dog 😂"),
         ("emma", 2, "Instant classic"),
@@ -212,7 +213,7 @@ SCRIPTS: dict[str, tuple[float, list[tuple[str, float, str]]]] = {
         ("daniel", 0, "Kicking off the Phoenix v2 channel. Launch target: Friday"),
         ("bob", 10, "Backend is feature complete, finishing load tests"),
         ("priya", 5, "Analytics dashboards are ready for review"),
-        ("mei", 3, "Marketing assets are in the shared drive"),
+        ("mei", 3, "Marketing assets are in the shared drive. Launch plan attached", {"file": "Phoenix launch plan.pdf"}),
         ("alice", 8, "Final designs are in Figma, link in the doc"),
         ("daniel", 2, "Great progress team 🚀"),
         ("bob", 1400, "Load test results: p95 latency 180ms at 2x expected traffic"),

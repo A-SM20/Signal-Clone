@@ -5,9 +5,10 @@ from collections.abc import Awaitable, Callable
 from sqlalchemy import select
 
 from app.constants import AVATAR_COLORS
-from app.models import Contact, Conversation, ConversationMember, User, UserSettings
+from app.models import Attachment, Contact, Conversation, ConversationMember, User, UserSettings
 from app.seed.build import SeedContext
 from app.seed.data import CONTACT_PAIRS, DIRECTS, GROUPS, SCRIPTS, USERS
+from app.seed.media import landscape, pdf_document, store
 from app.services.auth import new_identity_key
 
 GROUP_CREATED_BEFORE_FIRST_LINE = 30  # minutes
@@ -75,12 +76,37 @@ async def _conversations(ctx: SeedContext) -> None:
         )
 
 
+async def _attach(ctx: SeedContext, message, media: dict) -> None:
+    uploader = message.sender_id
+    for position, name in enumerate(media.get("images", [])):
+        data = landscape(name)
+        ctx.session.add(
+            Attachment(
+                message_id=message.id, uploader_id=uploader, kind="image", mime_type="image/jpeg",
+                size_bytes=len(data), original_name=f"{name}.jpg", storage_key=store(ctx.settings.upload_dir, data, ".jpg"),
+                width=960, height=720, position=position, created_at=message.created_at,
+            )
+        )
+    if "file" in media:
+        data = pdf_document(media["file"].removesuffix(".pdf"))
+        ctx.session.add(
+            Attachment(
+                message_id=message.id, uploader_id=uploader, kind="file", mime_type="application/pdf",
+                size_bytes=len(data), original_name=media["file"], storage_key=store(ctx.settings.upload_dir, data, ".pdf"),
+                position=0, created_at=message.created_at,
+            )
+        )
+
+
 async def _messages(ctx: SeedContext) -> None:
     for key, (start, lines) in SCRIPTS.items():
         minutes_ago = start
-        for sender, gap, text in lines:
+        for sender, gap, text, *rest in lines:
             minutes_ago -= gap
-            await ctx.add_message(key, sender, text, minutes_ago)
+            media = rest[0] if rest else None
+            message = await ctx.add_message(key, sender, text, minutes_ago, kind="media" if media else "text")
+            if media:
+                await _attach(ctx, message, media)
 
 
 async def _receipts(ctx: SeedContext) -> None:

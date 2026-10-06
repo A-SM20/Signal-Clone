@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { ApiError } from "@/lib/api/client";
-import type { MessageOut } from "@/lib/api/types";
+import type { AttachmentOut, MessageOut } from "@/lib/api/types";
 import { onSignOut } from "./auth";
 
 export interface OutboxDraft {
@@ -11,6 +11,8 @@ export interface OutboxDraft {
   body?: string | null;
   reply_to_id?: number | null;
   attachment_ids?: number[];
+  /** Display-only copy of uploaded attachments for the pending bubble. */
+  attachments?: AttachmentOut[];
   poll?: { question: string; options: string[]; allow_multiple: boolean };
 }
 

@@ -68,3 +68,17 @@ def test_no_future_timestamps(seeded_client, clock):
         return await s.scalar(select(func.max(Message.created_at)))
 
     assert db_call(seeded_client, latest) <= clock.now()
+
+
+def test_seed_includes_album_and_file(seeded_client):
+    a = login(seeded_client, "+15550100001")
+    convs = {c["title"]: c["id"] for c in seeded_client.get("/api/conversations", headers=a.headers).json()}
+
+    def media(title):
+        items = seeded_client.get(f"/api/conversations/{convs[title]}/messages?limit=100", headers=a.headers).json()["items"]
+        return [m for m in items if m["kind"] == "media"]
+
+    album = media("Weekend Hike")[0]
+    assert len(album["attachments"]) == 3 and album["attachments"][0]["width"] == 960
+    assert seeded_client.get(album["attachments"][0]["url"]).status_code == 200
+    assert media("Project Phoenix")[0]["attachments"][0]["kind"] == "file"

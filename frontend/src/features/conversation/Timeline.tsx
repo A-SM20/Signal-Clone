@@ -13,7 +13,7 @@ import { useReadReceipts } from "@/lib/useReadReceipts";
 import { useTyping } from "@/stores/typing";
 import { MessageBubble } from "../messages/MessageBubble";
 import { SystemMessage } from "../messages/SystemMessage";
-import { TextBody } from "../messages/TextBody";
+import { MessageBody } from "../messages/MessageBody";
 import { TypingDots } from "../chat-list/ConversationRow";
 import { isPending, useTimelineMessages } from "./useMessages";
 
@@ -141,7 +141,7 @@ export function Timeline({ conversation, meId, extras = {} }: { conversation: Co
         footerExtra={extras.footer?.(m)}
         below={extras.below?.(m)}
       >
-        {extras.body?.(m) ?? <TextBody text={m.body} deleted={!!m.deleted_at} />}
+        {extras.body?.(m) ?? <MessageBody message={m} />}
       </MessageBubble>
     );
     return (

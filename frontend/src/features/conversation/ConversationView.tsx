@@ -18,7 +18,17 @@ export function ConversationView() {
   }
   const left = conversation.me.left_at !== null;
   return (
-    <div className="relative flex h-full flex-col bg-bg">
+    <div
+      className="relative flex h-full flex-col bg-bg"
+      onDragOver={(e) => {
+        if (!left && e.dataTransfer.types.includes("Files")) e.preventDefault();
+      }}
+      onDrop={(e) => {
+        if (left || !e.dataTransfer.files.length) return;
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent("signal:drop-files", { detail: Array.from(e.dataTransfer.files) }));
+      }}
+    >
       <ConversationHeader conversation={conversation} meId={meId} />
       <Timeline conversation={conversation} meId={meId} />
       {left ? (
