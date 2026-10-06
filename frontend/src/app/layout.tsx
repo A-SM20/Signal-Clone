@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
+import { ToastViewport } from "@/components/ui/Toast";
+import { THEME_BOOT_SCRIPT } from "@/lib/theme";
 import "./globals.css";
 import { Providers } from "./providers";
 
@@ -15,8 +17,12 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1, view
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${inter.variable} h-full antialiased`} suppressHydrationWarning>
-      <body className="h-full">
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
+      </head>
+      <body className="h-full overflow-hidden">
         <Providers>{children}</Providers>
+        <ToastViewport />
       </body>
     </html>
   );

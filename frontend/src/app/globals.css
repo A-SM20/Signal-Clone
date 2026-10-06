@@ -1,11 +1,76 @@
 @import "tailwindcss";
+@import "../styles/tokens.css";
+
+/* Tailwind utilities backed by our theme variables (bg-surface, text-fg-2, bg-bubble-out, ...). */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-hover: var(--surface-hover);
+  --color-selected: var(--selected);
+  --color-fg: var(--text);
+  --color-fg-2: var(--text-secondary);
+  --color-fg-3: var(--text-tertiary);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-on-primary: var(--on-primary);
+  --color-bubble-out: var(--bubble-out-bg);
+  --color-bubble-out-fg: var(--bubble-out-text);
+  --color-bubble-in: var(--bubble-in-bg);
+  --color-bubble-in-fg: var(--bubble-in-text);
+  --color-divider: var(--divider);
+  --color-danger: var(--danger);
+  --color-online: var(--online);
+  --color-elevated: var(--elevated);
+  --font-sans: var(--font-inter), system-ui, -apple-system, "Segoe UI", sans-serif;
+}
 
 html,
 body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
   font-family: var(--font-inter), system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: var(--font-body);
+  -webkit-tap-highlight-color: transparent;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--selected) transparent;
+}
+
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 
 @keyframes splash {
   0% { transform: translateX(-100%); }
   100% { transform: translateX(300%); }
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pop-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slide-in-right {
+  from { transform: translateX(24px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes typing-dot {
+  0%, 60%, 100% { opacity: 0.35; transform: translateY(0); }
+  30% { opacity: 1; transform: translateY(-2px); }
+}
+
+@keyframes flash-highlight {
+  0% { background: rgb(44 107 237 / 0.25); }
+  100% { background: transparent; }
 }

@@ -1,0 +1,64 @@
+/* Signal look-alike design tokens. Values measured from official screenshots — see docs/ui-reference.md. */
+
+:root,
+:root[data-theme="light"] {
+  --bg: #ffffff;
+  --surface: #f6f6f6;
+  --surface-2: #e9e9e9;
+  --surface-hover: #ebebeb;
+  --selected: #dedede;
+  --text: #1b1b1b;
+  --text-secondary: #5e5e5e;
+  --text-tertiary: #848484;
+  --primary: #2c6bed;
+  --primary-hover: #1f5ad6;
+  --on-primary: #ffffff;
+  --bubble-out-bg: var(--chat-color, #2c6bed);
+  --bubble-out-text: #ffffff;
+  --bubble-in-bg: #e9e9e9;
+  --bubble-in-text: #1b1b1b;
+  --divider: #dedede;
+  --danger: #e5484d;
+  --online: #3b9b4f;
+  --scrim: rgb(0 0 0 / 0.4);
+  --elevated: #ffffff;
+  --shadow: 0 4px 24px rgb(0 0 0 / 0.14), 0 1px 3px rgb(0 0 0 / 0.08);
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --bg: #121212;
+  --surface: #1b1b1b;
+  --surface-2: #2e2e2e;
+  --surface-hover: #262626;
+  --selected: #3b3b3b;
+  --text: #e9e9e9;
+  --text-secondary: #b9b9b9;
+  --text-tertiary: #848484;
+  --primary: #2c6bed;
+  --primary-hover: #4a82f0;
+  --on-primary: #ffffff;
+  --bubble-in-bg: #3b3b3b;
+  --bubble-in-text: #e9e9e9;
+  --divider: #2e2e2e;
+  --danger: #f2555a;
+  --online: #4cbf63;
+  --scrim: rgb(0 0 0 / 0.6);
+  --elevated: #2e2e2e;
+  --shadow: 0 4px 24px rgb(0 0 0 / 0.5);
+  color-scheme: dark;
+}
+
+:root {
+  --radius-bubble: 18px;
+  --radius-bubble-tight: 4px;
+  --avatar-sm: 28px;
+  --avatar-md: 36px;
+  --avatar-lg: 48px;
+  --avatar-xl: 80px;
+  --font-body: 14px;
+  --font-caption: 12px;
+  --font-title: 20px;
+  --rail-width: 64px;
+  --header-height: 52px;
+}
