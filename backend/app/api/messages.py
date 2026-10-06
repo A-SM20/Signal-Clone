@@ -9,7 +9,7 @@ from app.errors import AppError
 from app.models import Message, User
 from app.schemas.messages import EditMessageIn, MessageOut, MessagePage, ReactionOut, RevisionOut, SendMessageIn
 from app.schemas.users import UserOut
-from app.services import edits
+from app.services import edits, pins
 from app.services import messages as svc
 from app.services import reactions as reaction_svc
 from app.services.receipts import message_details
@@ -121,3 +121,27 @@ async def delete_message(
     else:
         await edits.delete_for_me(session, ctx, user, message)
     return Response(status_code=204)
+
+
+class PinIn(BaseModel):
+    duration: Literal["24h", "7d", "30d", "forever"] = "forever"
+
+
+class OkOut(BaseModel):
+    ok: bool = True
+
+
+@router.post("/messages/{message_id}/pin", response_model=OkOut)
+async def pin_message(message_id: int, body: PinIn, user: UserDep, session: SessionDep, ctx: CtxDep) -> OkOut:
+    message = await _visible_message(session, message_id, user.id, active=True)
+    member = await member_of(session, message.conversation_id, user.id, active=True)
+    await pins.pin(session, ctx, member, message, body.duration)
+    return OkOut()
+
+
+@router.delete("/messages/{message_id}/pin", response_model=OkOut)
+async def unpin_message(message_id: int, user: UserDep, session: SessionDep, ctx: CtxDep) -> OkOut:
+    message = await _visible_message(session, message_id, user.id, active=True)
+    member = await member_of(session, message.conversation_id, user.id, active=True)
+    await pins.unpin(session, ctx, member, message)
+    return OkOut()

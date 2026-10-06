@@ -4,6 +4,7 @@ from app.models.conversation import Conversation, ConversationMember
 from app.models.device import Device
 from app.models.hidden import HiddenMessage
 from app.models.message import Message
+from app.models.pin import PinnedMessage
 from app.models.reaction import Reaction
 from app.models.revision import MessageRevision
 from app.models.social import Block, Contact
@@ -22,6 +23,7 @@ __all__ = [
     "IdentityVerification",
     "Message",
     "MessageRevision",
+    "PinnedMessage",
     "Reaction",
     "User",
     "UserSettings",

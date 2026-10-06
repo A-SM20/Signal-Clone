@@ -130,3 +130,9 @@ def test_seed_edits(seeded_client):
     assert len(edited) == 1 and len(deleted) == 1 and deleted[0]["body"] is None
     revs = seeded_client.get(f"/api/messages/{edited[0]['id']}/revisions", headers=a.headers).json()
     assert len(revs) == 1 and revs[0]["body"] != edited[0]["body"]
+
+
+def test_seed_pin_in_phoenix(seeded_client):
+    a = login(seeded_client, "+15550100001")
+    phoenix = next(c for c in seeded_client.get("/api/conversations", headers=a.headers).json() if c["title"] == "Project Phoenix")
+    assert len(phoenix["pins"]) == 1 and phoenix["pins"][0]["message"]["body"]

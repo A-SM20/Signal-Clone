@@ -29,6 +29,14 @@ class MyStateOut(BaseModel):
     left_at: datetime | None
 
 
+class PinOut(BaseModel):
+    message_id: int
+    pinned_by: int | None
+    pinned_at: datetime
+    expires_at: datetime | None
+    message: MessageOut
+
+
 class ConversationOut(BaseModel):
     id: int
     kind: Literal["direct", "group"]
@@ -45,6 +53,7 @@ class ConversationOut(BaseModel):
     last_message: MessageOut | None
     last_activity_at: datetime
     safety_number_changed: bool = False
+    pins: list[PinOut] = []
 
 
 def _strip_nonblank(value: str) -> str:
@@ -70,6 +79,7 @@ class ConversationPatch(BaseModel):
     title: Title | None = None
     description: Annotated[str, StringConstraints(max_length=480)] | None = None
     disappearing_seconds: int | None = None
+    pin_permission: Literal["all", "admins"] | None = None
 
     @field_validator("disappearing_seconds")
     @classmethod

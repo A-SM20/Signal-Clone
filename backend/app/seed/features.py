@@ -14,6 +14,7 @@ from app.models import (
     IdentityVerification,
     Message,
     MessageRevision,
+    PinnedMessage,
     Reaction,
     User,
     UserSettings,
@@ -197,4 +198,19 @@ async def seed_edits(ctx: SeedContext) -> None:
     deleted.deleted_at = deleted.created_at + timedelta(minutes=2)
 
 
-FEATURE_SEEDERS: list[Callable[[SeedContext], Awaitable[None]]] = [seed_core, seed_verifications, seed_edits]
+async def seed_pins(ctx: SeedContext) -> None:
+    """Daniel pinned the Phoenix kickoff message (forever)."""
+    kickoff = await ctx.session.scalar(
+        select(Message).where(Message.conversation_id == ctx.convs["phoenix"].id, Message.body.startswith("Kicking off"))
+    )
+    ctx.session.add(
+        PinnedMessage(
+            conversation_id=kickoff.conversation_id,
+            message_id=kickoff.id,
+            pinned_by=ctx.users["daniel"].id,
+            pinned_at=kickoff.created_at + timedelta(minutes=1),
+        )
+    )
+
+
+FEATURE_SEEDERS: list[Callable[[SeedContext], Awaitable[None]]] = [seed_core, seed_verifications, seed_edits, seed_pins]

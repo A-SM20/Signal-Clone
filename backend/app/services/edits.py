@@ -11,6 +11,7 @@ from app.realtime import events
 from app.schemas.messages import MessageOut, RevisionOut
 from app.services.attachments import purge_for_messages
 from app.services.conversations import active_member_ids
+from app.services import pins
 from app.services.message_views import message_out
 
 EDITABLE_KINDS = {"text"}
@@ -67,10 +68,13 @@ async def delete_for_everyone(session: AsyncSession, ctx: Ctx, user: User, messa
     await purge_for_messages(session, ctx, [message.id])
     await session.execute(delete(Reaction).where(Reaction.message_id == message.id))
     await session.execute(delete(MessageRevision).where(MessageRevision.message_id == message.id))
+    unpinned = await pins.drop_for_message(session, message)
     message.body = None
     message.deleted_at = now
     await session.commit()
     await _publish_update(session, ctx, message)
+    if unpinned:
+        await pins.publish_pins(session, ctx, message.conversation_id)
 
 
 async def delete_for_me(session: AsyncSession, ctx: Ctx, user: User, message: Message) -> None:

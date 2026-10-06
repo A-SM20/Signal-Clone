@@ -15,7 +15,7 @@ from app.realtime import ws_router
 from app.realtime.hub import Hub
 from app.seed.build import seed_database
 from app.context import Ctx
-from app.tasks.sweepers import run_every, sweep_expired
+from app.tasks.sweepers import run_every, sweep_expired, sweep_expired_pins
 
 
 def create_app(settings: Settings | None = None, clock: Clock | None = None) -> FastAPI:
@@ -37,6 +37,7 @@ def create_app(settings: Settings | None = None, clock: Clock | None = None) -> 
         jobs = []
         if settings.sweepers_enabled:
             jobs.append(asyncio.create_task(run_every(5, lambda: sweep_expired(app.state.session_factory, ctx))))
+            jobs.append(asyncio.create_task(run_every(60, lambda: sweep_expired_pins(app.state.session_factory, ctx))))
         yield
         for job in jobs:
             job.cancel()

@@ -9,7 +9,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from app.context import Ctx
-from app.models import Message
+from app.models import Message, PinnedMessage
 from app.realtime import events
 from app.services.attachments import purge_for_messages
 from app.services.conversations import active_member_ids
@@ -39,6 +39,29 @@ async def sweep_expired(session_factory: async_sessionmaker, ctx: Ctx) -> int:
         for cid, mids in by_conversation.items():
             await ctx.hub.send_to_users(await active_member_ids(session, cid), events.message_removed(cid, sorted(mids)))
         return len(ids)
+
+
+async def sweep_expired_pins(session_factory: async_sessionmaker, ctx: Ctx) -> int:
+    """Unpins messages whose pin duration ran out and tells the chat. Returns the count."""
+    from app.services.pins import publish_pins
+
+    async with session_factory() as session:
+        expired = list(
+            await session.scalars(
+                select(PinnedMessage).where(
+                    PinnedMessage.expires_at.is_not(None), PinnedMessage.expires_at <= ctx.clock.now()
+                )
+            )
+        )
+        if not expired:
+            return 0
+        conversation_ids = {p.conversation_id for p in expired}
+        for p in expired:
+            await session.delete(p)
+        await session.commit()
+        for cid in conversation_ids:
+            await publish_pins(session, ctx, cid)
+        return len(expired)
 
 
 async def run_every(seconds: float, job: Callable[[], Awaitable[object]]) -> None:

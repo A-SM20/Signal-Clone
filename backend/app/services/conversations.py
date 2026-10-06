@@ -34,6 +34,9 @@ async def build_views(
         m.conversation_id: out
         for m, out in zip(latest.values(), await message_out_many(session, ctx, list(latest.values()), viewer_id))
     }
+    from app.services.pins import pins_for  # pins imports this module's helpers lazily too
+
+    pins = await pins_for(session, ctx, ids)
     views = []
     for c in conversations:
         ms = members[c.id]
@@ -88,6 +91,7 @@ async def build_views(
                 last_message=latest_out.get(c.id),
                 last_activity_at=c.last_activity_at,
                 safety_number_changed=changed,
+                pins=pins.get(c.id, []),
             )
         )
     return views
@@ -222,7 +226,7 @@ async def update_conversation(
     session: AsyncSession, ctx: Ctx, me: User, conversation: Conversation, changes: dict
 ) -> None:
     """Group info (groups only) and the disappearing-message timer (any chat)."""
-    if conversation.kind != "group" and ({"title", "description"} & changes.keys()):
+    if conversation.kind != "group" and ({"title", "description", "pin_permission"} & changes.keys()):
         raise AppError(400, "not_a_group", "Only groups have a title and description")
     notices = []
     seconds = changes.get("disappearing_seconds")
@@ -234,6 +238,8 @@ async def update_conversation(
         notices.append({"type": "title_changed", "actor_id": me.id, "title": conversation.title})
     if "description" in changes:
         conversation.description = changes["description"]
+    if changes.get("pin_permission"):
+        conversation.pin_permission = changes["pin_permission"]
     messages = [await post_system_message(session, ctx, conversation, n) for n in notices]
     await session.commit()
     recipients = await active_member_ids(session, conversation.id)
