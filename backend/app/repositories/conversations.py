@@ -6,13 +6,19 @@ from sqlalchemy import ColumnElement, and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models import Conversation, ConversationMember, Message
+from app.models import Block, Conversation, ConversationMember, Message
 
 
 def visible_to(member) -> ColumnElement[bool]:
     """Messages a member may see: from when they joined until they left (if they left)."""
     clause = Message.created_at >= member.joined_at
     return and_(clause, or_(member.left_at.is_(None), Message.created_at <= member.left_at))
+
+
+def not_blocked_by(viewer_id: int) -> ColumnElement[bool]:
+    """Silent blocking: messages from people the viewer blocked are invisible to them."""
+    blocked = select(Block.blocked_id).where(Block.blocker_id == viewer_id)
+    return or_(Message.sender_id.is_(None), Message.sender_id.not_in(blocked))
 
 
 async def membership(session: AsyncSession, conversation_id: int, user_id: int) -> ConversationMember | None:
@@ -56,6 +62,7 @@ async def unread_counts(session: AsyncSession, viewer_id: int, conversation_ids:
             Message.kind != "system",
             Message.deleted_at.is_(None),
             visible_to(me),
+            not_blocked_by(viewer_id),
         )
         .group_by(Message.conversation_id)
     )
@@ -69,7 +76,7 @@ async def latest_visible_messages(
     latest_id = (
         select(func.max(Message.id))
         .join(me, and_(me.conversation_id == Message.conversation_id, me.user_id == viewer_id))
-        .where(Message.conversation_id.in_(conversation_ids), visible_to(me))
+        .where(Message.conversation_id.in_(conversation_ids), visible_to(me), not_blocked_by(viewer_id))
         .group_by(Message.conversation_id)
     )
     rows = await session.scalars(select(Message).where(Message.id.in_(latest_id)))

@@ -7,6 +7,7 @@ from app.errors import AppError
 from app.models import Conversation
 from app.repositories.conversations import membership
 from app.schemas.conversations import (
+    RequestActionIn,
     AddMembersIn,
     ConversationOut,
     ConversationPatch,
@@ -16,6 +17,7 @@ from app.schemas.conversations import (
     RoleIn,
 )
 from app.services import conversations as svc
+from app.services import requests as request_svc
 from app.services.files import delete_file, save_avatar
 
 router = APIRouter(prefix="/conversations", tags=["conversations"])
@@ -125,3 +127,13 @@ async def upload_group_avatar(
     delete_file(ctx, old)
     await svc.publish_conversation(session, ctx, conversation_id, await svc.active_member_ids(session, conversation_id))
     return await _view(session, ctx, conversation_id, user.id)
+
+
+@router.post("/{conversation_id}/request", responses={200: {"model": ConversationOut}, 204: {"description": "Request blocked or deleted"}})
+async def resolve_request(
+    conversation_id: int, body: RequestActionIn, user: UserDep, session: SessionDep, ctx: CtxDep
+):
+    member = await member_of(session, conversation_id, user.id, active=True)
+    if await request_svc.resolve(session, ctx, member, body.action):
+        return await _view(session, ctx, conversation_id, user.id)
+    return Response(status_code=204)

@@ -7,11 +7,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.constants import AVATAR_COLORS
 from app.context import Ctx
 from app.errors import AppError
-from app.models import Conversation, ConversationMember, Message, User
+from app.models import Block, Conversation, ConversationMember, Message, User
 from app.realtime import events
 from app.repositories import conversations as repo
 from app.schemas.conversations import ConversationOut, MemberOut, MyStateOut
 from app.services.message_views import message_out, message_out_many
+from app.services.contacts import is_contact
 from app.services.receipts import visible_cursors
 from app.services.users import avatar_url, get_settings, settings_for, to_user_out
 
@@ -118,8 +119,19 @@ async def publish_conversation(session: AsyncSession, ctx: Ctx, conversation_id:
 
 
 async def publish_message(session: AsyncSession, ctx: Ctx, message: Message, user_ids: Iterable[int]) -> None:
+    recipients = set(user_ids)
+    if message.sender_id is not None:  # silent blocking: people who blocked the sender get nothing
+        blockers = await session.scalars(select(Block.blocker_id).where(Block.blocked_id == message.sender_id))
+        recipients -= set(blockers)
     out = await message_out(session, ctx, message, viewer_id=0)
-    await ctx.hub.send_to_users(user_ids, events.message_created(out))
+    await ctx.hub.send_to_users(recipients, events.message_created(out))
+
+
+async def initial_request_state(session: AsyncSession, recipient_id: int, initiator_id: int) -> str:
+    """A chat started (or group invite sent) by someone not in the recipient's contacts is a request."""
+    if recipient_id == initiator_id or await is_contact(session, recipient_id, initiator_id):
+        return "accepted"
+    return "pending"
 
 
 # ---------------------------------------------------------------- writes
@@ -161,7 +173,8 @@ async def get_or_create_direct(session: AsyncSession, ctx: Ctx, me: User, other_
     session.add(conversation)
     await session.flush()
     for uid in {me.id, other_id}:
-        session.add(ConversationMember(conversation_id=conversation.id, user_id=uid, joined_at=now))
+        state = await initial_request_state(session, uid, me.id)
+        session.add(ConversationMember(conversation_id=conversation.id, user_id=uid, joined_at=now, request_state=state))
     await session.commit()
     return conversation, True
 
@@ -186,7 +199,8 @@ async def create_group(
     await session.flush()
     session.add(ConversationMember(conversation_id=conversation.id, user_id=me.id, role="admin", joined_at=now))
     for uid in others:
-        session.add(ConversationMember(conversation_id=conversation.id, user_id=uid, joined_at=now))
+        state = await initial_request_state(session, uid, me.id)
+        session.add(ConversationMember(conversation_id=conversation.id, user_id=uid, joined_at=now, request_state=state))
     created = await post_system_message(session, ctx, conversation, {"type": "group_created", "actor_id": me.id})
     msgs = [created]
     if others:
@@ -241,10 +255,11 @@ async def add_members(session: AsyncSession, ctx: Ctx, me: User, conversation: C
         existing = await repo.membership(session, conversation.id, uid)
         if existing is not None and existing.left_at is None:
             continue
+        state = await initial_request_state(session, uid, me.id)
         if existing is not None:  # re-joining: fresh window, no access to the gap
-            existing.left_at, existing.joined_at, existing.role = None, now, "member"
+            existing.left_at, existing.joined_at, existing.role, existing.request_state = None, now, "member", state
         else:
-            session.add(ConversationMember(conversation_id=conversation.id, user_id=uid, joined_at=now))
+            session.add(ConversationMember(conversation_id=conversation.id, user_id=uid, joined_at=now, request_state=state))
         added.append(uid)
     if not added:
         return

@@ -1,9 +1,10 @@
 import uuid
 
-from tests.helpers import assert_no_event, login, ws_session
+from tests.helpers import assert_no_event, befriend, login, ws_session
 
 
 def _direct(client, a, b):
+    befriend(client, a, b)
     return client.post("/api/conversations/direct", json={"user_id": b.user_id}, headers=a.headers).json()["id"]
 
 
@@ -144,6 +145,7 @@ def test_message_details_per_recipient(client):
     a = login(client, "+15550100001", "Alice")
     b = login(client, "+15550100002", "Bob")
     c = login(client, "+15550100003", "Carol")
+    befriend(client, a, b, c)
     g = client.post(
         "/api/conversations/groups", json={"title": "G", "member_ids": [b.user_id, c.user_id]}, headers=a.headers
     ).json()["id"]

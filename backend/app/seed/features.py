@@ -51,7 +51,13 @@ async def _conversations(ctx: SeedContext) -> None:
         ctx.session.add(conv)
         await ctx.session.flush()
         for uid in {ua.id, ub.id}:
-            ctx.session.add(ConversationMember(conversation_id=conv.id, user_id=uid, joined_at=joined))
+            # The recipient of a stranger's first message sees a request (no shared contact).
+            stranger = uid == ub.id and a == "jordan"
+            ctx.session.add(
+                ConversationMember(
+                    conversation_id=conv.id, user_id=uid, joined_at=joined, request_state="pending" if stranger else "accepted"
+                )
+            )
         ctx.convs[key] = conv
 
     for key, (title, description, admins, members) in GROUPS.items():
@@ -142,6 +148,7 @@ async def _receipts(ctx: SeedContext) -> None:
     await ctx.set_cursors("phoenix", "alice", ids["phoenix"][-1], ids["phoenix"][-5])  # 4 unread
     await ctx.set_cursors("alice_bob", "bob", ids["alice_bob"][-1], ids["alice_bob"][-2])  # Alice's last: delivered
     await ctx.set_cursors("alice_emma", "emma", ids["alice_emma"][-2], ids["alice_emma"][-2])  # Alice's last: sent
+    await ctx.set_cursors("jordan_alice", "alice", 0, 0)  # unanswered request
 
 
 async def seed_core(ctx: SeedContext) -> None:

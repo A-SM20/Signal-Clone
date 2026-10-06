@@ -51,3 +51,12 @@ def assert_no_event(ws) -> None:
     ws.send_json({"type": "ping"})
     frame = ws.receive_json()
     assert frame["type"] == "pong", f"unexpected event: {frame}"
+
+
+def befriend(client, *sessions: Session) -> None:
+    """Make every pair mutual contacts, so chats between them aren't message requests."""
+    phones = {s.user_id: client.get("/api/me", headers=s.headers).json()["phone"] for s in sessions}
+    for owner in sessions:
+        for other in sessions:
+            if owner.user_id != other.user_id:
+                client.post("/api/contacts", json={"phone": phones[other.user_id]}, headers=owner.headers)

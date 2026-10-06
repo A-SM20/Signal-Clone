@@ -2,7 +2,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import ConversationMember, Message
-from app.repositories.conversations import visible_to
+from app.repositories.conversations import not_blocked_by, visible_to
 
 
 def _like_pattern(query: str) -> str:
@@ -22,7 +22,7 @@ async def page(
     query = (
         select(Message)
         .join(me, (me.conversation_id == Message.conversation_id) & (me.user_id == member.user_id))
-        .where(Message.conversation_id == member.conversation_id, visible_to(me))
+        .where(Message.conversation_id == member.conversation_id, visible_to(me), not_blocked_by(member.user_id))
         .order_by(Message.id.desc())
         .limit(limit + 1)
     )
@@ -39,6 +39,7 @@ async def search(session: AsyncSession, viewer_id: int, query: str, limit: int) 
         .join(me, (me.conversation_id == Message.conversation_id) & (me.user_id == viewer_id))
         .where(
             visible_to(me),
+            not_blocked_by(viewer_id),
             Message.deleted_at.is_(None),
             Message.kind != "system",
             Message.body.ilike(_like_pattern(query), escape="\\"),

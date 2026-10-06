@@ -9,7 +9,7 @@ from app.models import Conversation, ConversationMember, Message, User
 from app.repositories import messages as repo
 from app.schemas.messages import MessageOut, MessagePage, SendMessageIn
 from app.services.conversations import active_member_ids, publish_message
-from app.services import attachments
+from app.services import attachments, requests
 from app.services.message_views import message_out, message_out_many
 
 
@@ -30,8 +30,12 @@ async def send_message(
     if existing is not None:
         return await message_out(session, ctx, existing, sender.id), False
 
+    if member.request_state == "pending":
+        raise AppError(403, "request_pending", "Accept the message request before replying")
     await _validate_reply(session, member.conversation_id, data.reply_to_id)
     conversation = await session.get_one(Conversation, member.conversation_id)
+    if conversation.kind == "direct":
+        await requests.restore_direct_recipient(session, ctx, conversation, sender.id)
     now = ctx.clock.now()
     message = Message(
         conversation_id=conversation.id,

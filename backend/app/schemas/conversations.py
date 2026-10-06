@@ -90,3 +90,7 @@ class AddMembersIn(BaseModel):
 
 class RoleIn(BaseModel):
     role: Literal["admin", "member"]
+
+
+class RequestActionIn(BaseModel):
+    action: Literal["accept", "block", "delete"]

@@ -1,9 +1,10 @@
 import uuid
 
-from tests.helpers import assert_no_event, login, ws_session
+from tests.helpers import assert_no_event, befriend, login, ws_session
 
 
 def _direct(client, a, b):
+    befriend(client, a, b)
     return client.post("/api/conversations/direct", json={"user_id": b.user_id}, headers=a.headers).json()["id"]
 
 

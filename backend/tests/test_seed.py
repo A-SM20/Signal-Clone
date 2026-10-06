@@ -100,3 +100,9 @@ def test_seed_has_disappearing_chat(seeded_client):
     items = seeded_client.get(f"/api/conversations/{emma['id']}/messages?limit=100", headers=a.headers).json()["items"]
     assert any(m["system_event"] and m["system_event"]["type"] == "timer_changed" for m in items)
     assert items[0]["expires_at"] is not None
+
+
+def test_seed_has_message_request(seeded_client):
+    a = login(seeded_client, "+15550100001")
+    jordan = next(c for c in seeded_client.get("/api/conversations", headers=a.headers).json() if c["title"] == "Jordan Blake")
+    assert jordan["me"]["request_state"] == "pending" and jordan["unread_count"] == 2

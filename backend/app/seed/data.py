@@ -26,6 +26,7 @@ DIRECTS = {
     "alice_emma": ("alice", "emma"),
     "bob_priya": ("bob", "priya"),
     "alice_self": ("alice", "alice"),
+    "jordan_alice": ("jordan", "alice"),  # a stranger: arrives as a message request
 }
 
 # key: (title, description, admins, members)
@@ -146,6 +147,10 @@ SCRIPTS: dict[str, tuple[float, list[tuple]]] = {
         ("alice", 0, "Pack list: headlamp, water filter, blister kit, extra socks"),
         ("alice", 120, "Ideas for the Phoenix launch post: lead with the speed improvements"),
         ("alice", 400, "Call the dentist Monday"),
+    ]),
+    "jordan_alice": (95, [
+        ("jordan", 0, "Hi Alice! We met at the design meetup last month"),
+        ("jordan", 2, "Would love to chat about the role on your team if you're open to it"),
     ]),
     "hike": (1340, [
         ("alice", 0, "Welcome to the hiking crew! 🥾"),
