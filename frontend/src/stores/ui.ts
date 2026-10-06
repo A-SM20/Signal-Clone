@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { onSignOut } from "./auth";
 
 export type Tab = "chats" | "calls" | "stories" | "settings";
 export type SettingsSection =
@@ -41,3 +42,6 @@ export const useUi = create<UiState>()((set) => ({
   openPanel: (panel) => set({ panel }),
   closePanel: () => set({ panel: null }),
 }));
+
+// The next account starts on its chat list, never on the previous account's settings or chat.
+onSignOut(() => useUi.setState({ tab: "chats", selectedId: null, panel: null, settingsSection: null }));
