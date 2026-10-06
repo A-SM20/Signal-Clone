@@ -19,6 +19,9 @@ interface UiState {
   selectedId: number | null;
   panel: Panel;
   settingsSection: SettingsSection | null;
+  /** Chat-list folder tab: "all" or a folder id. */
+  folder: number | "all";
+  setFolder: (folder: number | "all") => void;
   openSettings: (section: SettingsSection | null) => void;
   select: (id: number | null) => void;
   setTab: (tab: Tab) => void;
@@ -31,6 +34,8 @@ export const useUi = create<UiState>()((set) => ({
   selectedId: null,
   panel: null,
   settingsSection: null,
+  folder: "all",
+  setFolder: (folder) => set({ folder }),
   openSettings: (settingsSection) => set({ settingsSection }),
   select: (id) =>
     set((s) => ({
@@ -44,4 +49,4 @@ export const useUi = create<UiState>()((set) => ({
 }));
 
 // The next account starts on its chat list, never on the previous account's settings or chat.
-onSignOut(() => useUi.setState({ tab: "chats", selectedId: null, panel: null, settingsSection: null }));
+onSignOut(() => useUi.setState({ tab: "chats", selectedId: null, panel: null, settingsSection: null, folder: "all" }));

@@ -23,13 +23,13 @@ import { type SettingsSection, useUi } from "@/stores/ui";
 import {
   AccountSection,
   AppearanceSection,
-  Group,
   HelpSection,
   LinkedDevicesSection,
   NotificationsSection,
   PrivacySection,
   ProfileSection,
 } from "./sections";
+import { FolderEditor } from "./FolderEditor";
 
 const SECTIONS: { id: SettingsSection; label: string; icon: ReactNode }[] = [
   { id: "account", label: "Account", icon: <User size={18} /> },
@@ -70,11 +70,7 @@ export function SettingsDetail({ extras = {} }: { extras?: SettingsExtras }) {
     account: <AccountSection me={me} />,
     devices: <LinkedDevicesSection linkAction={extras.linkAction} />,
     appearance: <AppearanceSection me={me} />,
-    chats: extras.chats ?? (
-      <Group title="Chats">
-        <p className="px-4 py-3 text-[13px] text-fg-2">More chat settings are coming soon.</p>
-      </Group>
-    ),
+    chats: extras.chats ?? <FolderEditor />,
     notifications: <NotificationsSection me={me} />,
     privacy: <PrivacySection me={me} />,
     data: <ComingSoon icon={<Database size={28} />} title="Data usage" body="Control media auto-download and storage." />,

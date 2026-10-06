@@ -6,6 +6,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { ContextMenu, type MenuItem } from "@/components/ui/ContextMenu";
 import { IconButton, SearchInput } from "@/components/ui/controls";
 import { patchMyState, useConversations, useMeId } from "@/lib/api/hooks";
+import { inFolder, useFolders } from "@/lib/folders";
 import type { ConversationOut } from "@/lib/api/types";
 import { isMuted } from "@/lib/conversations";
 import { useBreakpoint } from "@/lib/useBreakpoint";
@@ -16,6 +17,7 @@ import { NewChatPanel } from "../contacts/NewChatPanel";
 import { CreateGroupFlow } from "../groups/CreateGroupFlow";
 import { ConversationRow } from "./ConversationRow";
 import { SearchResults } from "./SearchResults";
+import { FolderTabs } from "./FolderTabs";
 
 export function ConnectingBanner() {
   const status = useSocket((s) => s.status);
@@ -30,7 +32,8 @@ export function ConnectingBanner() {
 
 /** Left pane on the Chats tab (desktop) / the whole Chats screen (mobile). */
 export function ChatsPane({ extra }: { extra?: React.ReactNode } = {}) {
-  const { panel, openPanel, closePanel, selectedId, select, setTab } = useUi();
+  const { panel, openPanel, closePanel, selectedId, select, setTab, folder, setFolder } = useUi();
+  const { data: folders = [] } = useFolders();
   const meId = useMeId();
   const me = useAuth((s) => s.me);
   const breakpoint = useBreakpoint();
@@ -80,9 +83,16 @@ export function ChatsPane({ extra }: { extra?: React.ReactNode } = {}) {
   const showRequests = panel === "requests";
   const all = conversations ?? [];
   const requests = all.filter((c) => c.me.request_state === "pending");
+  const activeFolder = folder === "all" ? "all" : (folders.find((f) => f.id === folder) ?? "all");
+  const inList = showArchived || showRequests;
   const visible = showRequests
     ? requests
-    : all.filter((c) => c.me.is_archived === showArchived && c.me.request_state !== "pending");
+    : all.filter(
+        (c) =>
+          c.me.is_archived === showArchived &&
+          c.me.request_state !== "pending" &&
+          (showArchived || inFolder(c, activeFolder)),
+      );
   const archivedCount = (conversations ?? []).filter((c) => c.me.is_archived).length;
 
   return (
@@ -130,13 +140,14 @@ export function ChatsPane({ extra }: { extra?: React.ReactNode } = {}) {
           <SearchInput ref={searchRef} value={query} onChange={setQuery} />
         </div>
       )}
+      {!inList && !query.trim() && <FolderTabs folders={folders} value={activeFolder === "all" ? "all" : activeFolder.id} onChange={setFolder} />}
       <ConnectingBanner />
       {query.trim().length >= 2 ? (
         <SearchResults query={query.trim()} onDone={() => setQuery("")} />
       ) : (
         <div className="min-h-0 flex-1 overflow-y-auto pb-3">
           {!showArchived && !showRequests && extra}
-          {!showArchived && !showRequests && requests.length > 0 && (
+          {!showArchived && !showRequests && activeFolder === "all" && requests.length > 0 && (
             <button
               onClick={() => openPanel("requests")}
               className="mx-2 mb-1 flex w-[calc(100%-16px)] items-center gap-3 rounded-xl px-2.5 py-2.5 text-left hover:bg-hover"
@@ -163,7 +174,7 @@ export function ChatsPane({ extra }: { extra?: React.ReactNode } = {}) {
               />
             ))}
           </ul>
-          {!showArchived && !showRequests && archivedCount > 0 && (
+          {!showArchived && !showRequests && activeFolder === "all" && archivedCount > 0 && (
             <button
               onClick={() => openPanel("archived")}
               className="mx-2 mt-1 flex w-[calc(100%-16px)] items-center gap-3 rounded-xl px-2.5 py-3 text-left text-[14px] font-medium text-fg-2 hover:bg-hover"
@@ -176,7 +187,13 @@ export function ChatsPane({ extra }: { extra?: React.ReactNode } = {}) {
           )}
           {conversations && !visible.length && (
             <p className="px-6 pt-10 text-center text-[13px] text-fg-2">
-              {showRequests ? "No message requests" : showArchived ? "No archived chats" : "No chats yet. Tap the pencil to start one."}
+              {showRequests
+                ? "No message requests"
+                : showArchived
+                  ? "No archived chats"
+                  : activeFolder !== "all"
+                    ? "No chats in this folder"
+                    : "No chats yet. Tap the pencil to start one."}
             </p>
           )}
         </div>
