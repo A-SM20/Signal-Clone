@@ -1,15 +1,16 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Query, Response
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import select
 
 from app.api.deps import CtxDep, SessionDep, UserDep, member_of
 from app.errors import AppError
 from app.models import Message, User
-from app.schemas.messages import MessageOut, MessagePage, SendMessageIn
+from app.schemas.messages import MessageOut, MessagePage, ReactionOut, SendMessageIn
 from app.schemas.users import UserOut
 from app.services import messages as svc
+from app.services import reactions as reaction_svc
 from app.services.receipts import message_details
 from app.services.users import users_out
 
@@ -66,3 +67,32 @@ async def get_message_details(message_id: int, user: UserDep, session: SessionDe
     people = list(await session.scalars(select(User).where(User.id.in_([uid for uid, _ in rows]))))
     outs = await users_out(session, ctx, people)
     return MessageDetailsOut(recipients=[RecipientStatusOut(user=outs[uid], status=st) for uid, st in rows])
+
+
+async def _visible_message(session, message_id: int, user_id: int, *, active: bool) -> Message:
+    """Loads a message the caller may see; non-members get 404."""
+    message = await session.get(Message, message_id)
+    if message is None:
+        raise AppError(404, "not_found", "Message not found")
+    await member_of(session, message.conversation_id, user_id, active=active)
+    return message
+
+
+class ReactionIn(BaseModel):
+    emoji: str = Field(min_length=1, max_length=16, pattern=r"^\S+$")
+
+
+class ReactionsOut(BaseModel):
+    reactions: list[ReactionOut]
+
+
+@router.put("/messages/{message_id}/reaction", response_model=ReactionsOut)
+async def put_reaction(message_id: int, body: ReactionIn, user: UserDep, session: SessionDep, ctx: CtxDep) -> ReactionsOut:
+    message = await _visible_message(session, message_id, user.id, active=True)
+    return ReactionsOut(reactions=await reaction_svc.react(session, ctx, user, message, body.emoji))
+
+
+@router.delete("/messages/{message_id}/reaction", response_model=ReactionsOut)
+async def delete_reaction(message_id: int, user: UserDep, session: SessionDep, ctx: CtxDep) -> ReactionsOut:
+    message = await _visible_message(session, message_id, user.id, active=True)
+    return ReactionsOut(reactions=await reaction_svc.unreact(session, ctx, user, message))

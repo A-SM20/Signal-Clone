@@ -82,3 +82,12 @@ def test_seed_includes_album_and_file(seeded_client):
     assert len(album["attachments"]) == 3 and album["attachments"][0]["width"] == 960
     assert seeded_client.get(album["attachments"][0]["url"]).status_code == 200
     assert media("Project Phoenix")[0]["attachments"][0]["kind"] == "file"
+
+
+def test_seed_has_reactions_and_replies(seeded_client):
+    a = login(seeded_client, "+15550100001")
+    convs = {c["title"]: c["id"] for c in seeded_client.get("/api/conversations", headers=a.headers).json()}
+    items = seeded_client.get(f"/api/conversations/{convs['Weekend Hike']}/messages?limit=100", headers=a.headers).json()["items"]
+    assert any(len(m["reactions"]) >= 2 for m in items)
+    replies = [m for m in items if m["reply_to"]]
+    assert replies and replies[0]["reply_to"]["body"]

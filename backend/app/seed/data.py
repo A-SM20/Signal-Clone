@@ -36,7 +36,8 @@ GROUPS = {
 }
 
 # Conversation scripts: (minutes ago of the first line, [(sender, minutes after previous line, text[, media])]).
-# Optional media: {"images": [names]} or {"file": "name.pdf"} — generated at seed time (app/seed/media.py).
+# Optional extras: {"images": [names]} / {"file": "name.pdf"} (generated media, app/seed/media.py),
+# {"reply": n} (quote the message n lines earlier), {"reactions": {user_key: emoji}}.
 SCRIPTS: dict[str, tuple[float, list[tuple]]] = {
     "alice_bob": (1940, [
         ("bob", 0, "Hey! Are you still up for the hike on Saturday?"),
@@ -54,7 +55,7 @@ SCRIPTS: dict[str, tuple[float, list[tuple]]] = {
         ("bob", 3, "I'll pick you up at 7?"),
         ("alice", 5, "7 works. I'll have snacks ready"),
         ("bob", 1, "Trail mix with the chocolate bits please 😄"),
-        ("alice", 1, "Obviously"),
+        ("alice", 1, "Obviously", {"reactions": {"bob": "😂"}}),
         ("bob", 900, "Just bought new boots, hope they're broken in by then"),
         ("alice", 4, "Wear them around the house tonight, helps a lot"),
         ("bob", 2, "Good tip, doing that now"),
@@ -159,13 +160,13 @@ SCRIPTS: dict[str, tuple[float, list[tuple]]] = {
         ("alice", 2, "We'll take breaks. Summit coffee is the reward"),
         ("priya", 1, "Wait there's coffee?"),
         ("alice", 1, "I'm bringing the stove ☕"),
-        ("priya", 1, "Best. Hike. Ever."),
+        ("priya", 1, "Best. Hike. Ever.", {"reactions": {"alice": "❤️", "bob": "👍", "lucas": "😂"}}),
         ("bob", 600, "Forecast still looks great for Saturday"),
         ("lucas", 20, "Should we bring bear spray?"),
         ("bob", 3, "Couldn't hurt, there were sightings last month"),
         ("lucas", 1, "I'll grab some"),
         ("priya", 200, "Anyone have an extra pair of trekking poles?"),
-        ("alice", 15, "I have two pairs, you can borrow one"),
+        ("alice", 15, "I have two pairs, you can borrow one", {"reply": 1}),
         ("priya", 1, "You're the best"),
         ("bob", 100, "Reminder: bring layers, it's windy at the top"),
         ("lucas", 30, "Leaving my place at 6:45 to pick you both up"),
@@ -181,7 +182,7 @@ SCRIPTS: dict[str, tuple[float, list[tuple]]] = {
         ("emma", 1600, "Photos from Sunday!", {"images": ["sunset"]}),
         ("mei", 3, "Aww these are so cute"),
         ("alice", 5, "The one with the kids and the dog 😂"),
-        ("emma", 2, "Instant classic"),
+        ("emma", 2, "Instant classic", {"reply": 1, "reactions": {"mei": "😂"}}),
         ("mei", 1800, "Does anyone know when grandma's birthday party is?"),
         ("emma", 30, "The 18th, at the lake house"),
         ("mei", 2, "Thanks! Adding it to the calendar"),
@@ -229,7 +230,7 @@ SCRIPTS: dict[str, tuple[float, list[tuple]]] = {
         ("daniel", 900, "Go/no-go meeting tomorrow at 10am"),
         ("mei", 5, "I'll prepare the launch announcement draft"),
         ("alice", 3, "I'll have the release notes ready"),
-        ("daniel", 1200, "We're GO for Friday 🎉"),
+        ("daniel", 1200, "We're GO for Friday 🎉", {"reactions": {"alice": "🎉", "bob": "❤️", "priya": "👍", "mei": "🎉"}}),
         ("bob", 2, "Let's do this"),
         ("mei", 3, "Announcement scheduled for 9am"),
         ("priya", 1, "Dashboards are live"),

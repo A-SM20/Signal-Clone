@@ -5,7 +5,7 @@ from collections.abc import Awaitable, Callable
 from sqlalchemy import select
 
 from app.constants import AVATAR_COLORS
-from app.models import Attachment, Contact, Conversation, ConversationMember, User, UserSettings
+from app.models import Attachment, Contact, Reaction, Conversation, ConversationMember, User, UserSettings
 from app.seed.build import SeedContext
 from app.seed.data import CONTACT_PAIRS, DIRECTS, GROUPS, SCRIPTS, USERS
 from app.seed.media import landscape, pdf_document, store
@@ -103,10 +103,18 @@ async def _messages(ctx: SeedContext) -> None:
         minutes_ago = start
         for sender, gap, text, *rest in lines:
             minutes_ago -= gap
-            media = rest[0] if rest else None
-            message = await ctx.add_message(key, sender, text, minutes_ago, kind="media" if media else "text")
-            if media:
-                await _attach(ctx, message, media)
+            extras = rest[0] if rest else {}
+            has_media = "images" in extras or "file" in extras
+            reply_to = ctx.message_ids[key][-extras["reply"]] if "reply" in extras else None
+            message = await ctx.add_message(
+                key, sender, text, minutes_ago, kind="media" if has_media else "text", reply_to_id=reply_to
+            )
+            if has_media:
+                await _attach(ctx, message, extras)
+            for user_key, emoji in extras.get("reactions", {}).items():
+                ctx.session.add(
+                    Reaction(message_id=message.id, user_id=ctx.users[user_key].id, emoji=emoji, created_at=message.created_at)
+                )
 
 
 async def _receipts(ctx: SeedContext) -> None:
