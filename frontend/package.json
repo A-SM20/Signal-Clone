@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "gen:api": "node scripts/gen-api.mjs"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.104.1",
