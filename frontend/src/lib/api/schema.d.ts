@@ -492,6 +492,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/messages/{message_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Message */
+        delete: operations["delete_message_api_messages__message_id__delete"];
+        options?: never;
+        head?: never;
+        /** Edit Message */
+        patch: operations["edit_message_api_messages__message_id__patch"];
+        trace?: never;
+    };
+    "/api/messages/{message_id}/revisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Revisions */
+        get: operations["list_revisions_api_messages__message_id__revisions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/search": {
         parameters: {
             query?: never;
@@ -691,6 +726,11 @@ export interface components {
         DirectIn: {
             /** User Id */
             user_id: number;
+        };
+        /** EditMessageIn */
+        EditMessageIn: {
+            /** Body */
+            body: string;
         };
         /** GroupIn */
         GroupIn: {
@@ -926,6 +966,16 @@ export interface components {
              * @enum {string}
              */
             action: "accept" | "block" | "delete";
+        };
+        /** RevisionOut */
+        RevisionOut: {
+            /** Body */
+            body: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
         };
         /** RoleIn */
         RoleIn: {
@@ -2324,6 +2374,109 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReactionsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_message_api_messages__message_id__delete: {
+        parameters: {
+            query?: {
+                scope?: "me" | "everyone";
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                message_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    edit_message_api_messages__message_id__patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                message_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EditMessageIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_revisions_api_messages__message_id__revisions_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                message_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RevisionOut"][];
                 };
             };
             /** @description Validation Error */

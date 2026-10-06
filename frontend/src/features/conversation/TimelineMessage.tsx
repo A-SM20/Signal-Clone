@@ -71,7 +71,20 @@ export const TimelineMessage = memo(function TimelineMessage({
             <QuotedMessage quote={m.reply_to} conversation={conversation} meId={meId} outgoing={mine} />
           ) : undefined
         }
-        footerExtra={extras.footer?.(m)}
+        footerExtra={
+          <>
+            {extras.footer?.(m)}
+            {m.edited_at && !m.deleted_at && (
+              <button
+                onClick={() => handlers.onHistory?.(m)}
+                className="hover:underline"
+                aria-label="Edited — view edit history"
+              >
+                Edited
+              </button>
+            )}
+          </>
+        }
         below={<ReactionChips message={m} conversation={conversation} meId={meId} mine={mine} />}
       >
         {extras.body?.(m) ?? <MessageBody message={m} />}

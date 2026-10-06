@@ -1,15 +1,19 @@
 "use client";
 
-import { Copy, Ellipsis, Info, Reply, SmilePlus } from "lucide-react";
+import { Copy, Ellipsis, Info, Pencil, Reply, SmilePlus, Trash2 } from "lucide-react";
 import { type MouseEvent, useState } from "react";
 import { ContextMenu, type MenuItem } from "@/components/ui/ContextMenu";
 import type { MessageOut } from "@/lib/api/types";
+import { canEdit } from "@/lib/editing";
 import { toast } from "@/stores/toast";
 
 export interface ActionHandlers {
   onReply: (m: MessageOut) => void;
   onReact: (m: MessageOut, anchor: { x: number; y: number }) => void;
   onInfo?: (m: MessageOut) => void;
+  onEdit?: (m: MessageOut) => void;
+  onDelete?: (m: MessageOut) => void;
+  onHistory?: (m: MessageOut) => void;
   extraItems?: (m: MessageOut, mine: boolean) => MenuItem[];
 }
 
@@ -29,8 +33,14 @@ export function useMessageMenu(m: MessageOut, mine: boolean, handlers: ActionHan
               },
             ]
           : []),
+        ...(mine && handlers.onEdit && canEdit(m, m.sender_id ?? -1)
+          ? [{ label: "Edit", icon: <Pencil size={16} />, onSelect: () => handlers.onEdit!(m) }]
+          : []),
         ...(mine && handlers.onInfo ? [{ label: "Info", icon: <Info size={16} />, onSelect: () => handlers.onInfo!(m) }] : []),
         ...(handlers.extraItems?.(m, mine) ?? []),
+        ...(handlers.onDelete
+          ? [{ label: "Delete", icon: <Trash2 size={16} />, danger: true, onSelect: () => handlers.onDelete!(m) }]
+          : []),
       ]
     : [];
   return {

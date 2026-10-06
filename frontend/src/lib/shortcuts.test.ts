@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { matchShortcut } from "./shortcuts";
+import { isEditLastKey, matchShortcut } from "./shortcuts";
 
 const key = (k: string, mods: Partial<Record<"ctrlKey" | "metaKey" | "altKey" | "shiftKey", boolean>> = {}) => ({
   key: k, ctrlKey: false, metaKey: false, altKey: false, shiftKey: false, ...mods,
@@ -24,5 +24,15 @@ describe("matchShortcut", () => {
     expect(matchShortcut(key("n"), "other")).toBeNull();
     expect(matchShortcut(key("n", { ctrlKey: true, shiftKey: true }), "other")).toBeNull();
     expect(matchShortcut(key("ArrowUp"), "other")).toBeNull();
+  });
+});
+
+describe("isEditLastKey", () => {
+  it("is a bare ArrowUp in an empty composer", () => {
+    expect(isEditLastKey(key("ArrowUp"), "")).toBe(true);
+    expect(isEditLastKey(key("ArrowUp"), "  ")).toBe(true);
+    expect(isEditLastKey(key("ArrowUp"), "draft")).toBe(false);
+    expect(isEditLastKey(key("ArrowUp", { altKey: true }), "")).toBe(false);
+    expect(isEditLastKey(key("ArrowDown"), "")).toBe(false);
   });
 });

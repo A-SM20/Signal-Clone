@@ -36,3 +36,8 @@ export function matchShortcut(e: KeyLike, platform: Platform): ShortcutId | null
   if (noMods && !e.altKey && e.key === "Escape") return "closeOrCancel";
   return null;
 }
+
+/** ↑ with no modifiers in an empty composer edits my last message (handled by the composer, not globally). */
+export function isEditLastKey(e: KeyLike, composerText: string): boolean {
+  return e.key === "ArrowUp" && !e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey && !composerText.trim();
+}

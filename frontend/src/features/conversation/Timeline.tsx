@@ -10,12 +10,15 @@ import { formatPhone } from "@/features/onboarding/DemoAccounts";
 import { useReadReceipts } from "@/lib/useReadReceipts";
 import { useTyping } from "@/stores/typing";
 import type { ActionHandlers } from "../messages/MessageActions";
+import { DeleteMessageModal } from "../messages/DeleteMessageModal";
+import { EditHistoryModal } from "../messages/EditHistoryModal";
 import { MessageDetailsModal } from "../messages/MessageDetailsModal";
 import { ReactionPicker } from "../messages/reactions";
 import { SystemMessage } from "../messages/SystemMessage";
 import { TypingDots } from "../chat-list/ConversationRow";
 import { type BubbleExtras, TimelineMessage } from "./TimelineMessage";
 import { useTimelineMessages } from "./useMessages";
+import { useEditing } from "@/stores/editing";
 import { useReply } from "@/stores/reply";
 
 export type { BubbleExtras };
@@ -84,6 +87,8 @@ export function Timeline({
   const items = useMemo(() => groupTimeline(messages, meId, new Date(), isGroup), [messages, meId, isGroup]);
   const [picker, setPicker] = useState<{ message: MessageOut; anchor: { x: number; y: number } } | null>(null);
   const [details, setDetails] = useState<MessageOut | null>(null);
+  const [deleting, setDeleting] = useState<MessageOut | null>(null);
+  const [history, setHistory] = useState<MessageOut | null>(null);
   const handlers = useMemo<ActionHandlers>(
     () => ({
       onReply: (m) => {
@@ -92,6 +97,12 @@ export function Timeline({
       },
       onReact: (m, anchor) => setPicker({ message: m, anchor }),
       onInfo: (m) => setDetails(m),
+      onEdit: (m) => {
+        useEditing.getState().set(conversation.id, m);
+        window.dispatchEvent(new Event("signal:focus-composer"));
+      },
+      onDelete: (m) => setDeleting(m),
+      onHistory: (m) => setHistory(m),
       extraItems: extraMenuItems,
     }),
     [conversation.id, extraMenuItems],
@@ -179,6 +190,8 @@ export function Timeline({
         />
       )}
       {details && <MessageDetailsModal message={details} onClose={() => setDetails(null)} />}
+      {deleting && <DeleteMessageModal message={deleting} meId={meId} onClose={() => setDeleting(null)} />}
+      {history && <EditHistoryModal message={history} onClose={() => setHistory(null)} />}
       {!atBottom && (
         <button
           aria-label="Scroll to bottom"

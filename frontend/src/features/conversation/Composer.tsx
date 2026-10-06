@@ -2,11 +2,21 @@
 
 import { SendHorizontal } from "lucide-react";
 import { type ClipboardEvent, type KeyboardEvent, type ReactNode, useEffect, useLayoutEffect, useRef, useState } from "react";
-import type { ConversationOut } from "@/lib/api/types";
+import type { InfiniteData } from "@tanstack/react-query";
+import { ApiError } from "@/lib/api/client";
+import { qk } from "@/lib/api/queryKeys";
+import type { ConversationOut, MessagePage } from "@/lib/api/types";
+import { editMessage, lastEditable } from "@/lib/editing";
 import { sendMessage } from "@/lib/messaging";
+import { queryClient } from "@/lib/queryClient";
+import { isEditLastKey } from "@/lib/shortcuts";
+import { useAuth } from "@/stores/auth";
+import { useEditing } from "@/stores/editing";
+import { toast } from "@/stores/toast";
 import { socketClient } from "@/lib/realtime/useRealtime";
 import { useBreakpoint } from "@/lib/useBreakpoint";
 import { AttachButton, AttachmentTray, useAttachmentTray } from "./AttachmentTray";
+import { EditingBar } from "./EditingBar";
 
 const TYPING_THROTTLE_MS = 3000;
 const TYPING_IDLE_MS = 5000;
@@ -53,9 +63,16 @@ export function Composer({ conversation, slots = {} }: { conversation: Conversat
   const typing = useTypingSignal(conversation.id);
   const tray = useAttachmentTray();
   const mobile = useBreakpoint() === "mobile";
+  const editing = useEditing((s) => s.byConversation[conversation.id] ?? null);
+  const setEditing = useEditing((s) => s.set);
+
+  // Entering edit mode loads the message text; leaving it restores the unsent draft.
+  useEffect(() => {
+    setText(editing ? (editing.body ?? "") : (DRAFTS.get(conversation.id) ?? ""));
+    if (editing) box.current?.focus();
+  }, [editing, conversation.id]);
 
   useEffect(() => {
-    setText(DRAFTS.get(conversation.id) ?? "");
     tray.clear();
     if (!mobile) box.current?.focus();
   }, [conversation.id, mobile]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -80,6 +97,7 @@ export function Composer({ conversation, slots = {} }: { conversation: Conversat
 
   const update = (value: string) => {
     setText(value);
+    if (editing) return;
     DRAFTS.set(conversation.id, value);
     if (value.trim()) typing.ping();
     else typing.stop();
@@ -89,7 +107,18 @@ export function Composer({ conversation, slots = {} }: { conversation: Conversat
   const hasFiles = tray.items.length > 0;
   const canSend = hasFiles ? tray.ready : hasText;
 
+  const cancelEdit = () => setEditing(conversation.id, null);
+
+  const saveEdit = () => {
+    const target = editing!;
+    const body = text.trim();
+    cancelEdit();
+    if (!body || body === target.body) return;
+    editMessage(target, body).catch((e) => toast(e instanceof ApiError ? e.message : "Couldn't edit the message"));
+  };
+
   const send = () => {
+    if (editing) return saveEdit();
     if (!canSend) return;
     const body = text.trim() || null;
     if (hasFiles) {
@@ -112,6 +141,20 @@ export function Composer({ conversation, slots = {} }: { conversation: Conversat
   };
 
   const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (editing && e.key === "Escape") {
+      e.preventDefault();
+      e.stopPropagation();
+      return cancelEdit();
+    }
+    if (!editing && isEditLastKey(e, text) && !hasFiles) {
+      const pages = queryClient.getQueryData<InfiniteData<MessagePage>>(qk.messages(conversation.id))?.pages ?? [];
+      const oldestFirst = pages.flatMap((p) => p.items).reverse();
+      const target = lastEditable(oldestFirst, useAuth.getState().me?.id ?? 0);
+      if (target) {
+        e.preventDefault();
+        return setEditing(conversation.id, target);
+      }
+    }
     if (slots.onKeyDownCapture?.(e, text)) return;
     if (e.key === "Enter" && !e.shiftKey && !mobile && !e.nativeEvent.isComposing) {
       e.preventDefault();
@@ -129,10 +172,10 @@ export function Composer({ conversation, slots = {} }: { conversation: Conversat
 
   return (
     <div className="shrink-0 border-t border-divider bg-bg px-3 pt-2 pb-[max(8px,env(safe-area-inset-bottom))]">
-      {slots.above}
+      {editing ? <EditingBar message={editing} onCancel={cancelEdit} /> : slots.above}
       <AttachmentTray items={tray.items} onRemove={tray.remove} />
       <div className="flex items-end gap-1.5">
-        <AttachButton onFiles={tray.add} />
+        {!editing && <AttachButton onFiles={tray.add} />}
         {slots.left}
         <div className="flex min-h-10 flex-1 items-center rounded-[20px] bg-surface-2 px-4 py-2">
           <textarea
@@ -148,13 +191,13 @@ export function Composer({ conversation, slots = {} }: { conversation: Conversat
             className="max-h-40 w-full resize-none bg-transparent text-[14px] leading-5 text-fg outline-none placeholder:text-fg-3"
           />
         </div>
-        {!hasText && !hasFiles && slots.idleAction ? (
+        {!editing && !hasText && !hasFiles && slots.idleAction ? (
           slots.idleAction
         ) : (
           <button
-            aria-label="Send"
+            aria-label={editing ? "Save edit" : "Send"}
             onClick={send}
-            disabled={!canSend}
+            disabled={editing ? !hasText : !canSend}
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-white disabled:opacity-40"
           >
             <SendHorizontal size={18} />
