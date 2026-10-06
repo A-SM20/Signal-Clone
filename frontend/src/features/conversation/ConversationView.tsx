@@ -19,6 +19,7 @@ import { SafetyNumberChangedNotice } from "./SafetyNumberChangedNotice";
 import { canSetTimer, TimerBadge, timerMenuItems } from "./DisappearingMenu";
 import { ConversationHeader } from "./ConversationHeader";
 import { Timeline } from "./Timeline";
+import { VoiceRecorder } from "./VoiceRecorder";
 
 export function ConversationView() {
   const selectedId = useUi((s) => s.selectedId);
@@ -89,6 +90,13 @@ export function ConversationView() {
               <ReplyPreview message={replyTo} conversation={conversation} meId={meId} onCancel={() => setReply(conversation.id, null)} />
             ),
             replyToId: replyTo?.id ?? null,
+            idleAction: (
+              <VoiceRecorder
+                conversationId={conversation.id}
+                replyToId={replyTo?.id ?? null}
+                onSent={() => setReply(conversation.id, null)}
+              />
+            ),
             onSent: () => setReply(conversation.id, null),
             onKeyDownCapture: (e) => {
               if (e.key === "Escape" && replyTo) {

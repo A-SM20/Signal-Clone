@@ -683,7 +683,7 @@ export interface paths {
         put?: never;
         /**
          * Upload Attachment
-         * @description Upload first, then reference the returned id in a `media` message's attachment_ids.
+         * @description Upload first, then reference the returned id in a `media` (or `voice`) message's attachment_ids.
          */
         post: operations["upload_attachment_api_attachments_post"];
         delete?: never;
@@ -743,6 +743,15 @@ export interface components {
         Body_upload_attachment_api_attachments_post: {
             /** File */
             file: string;
+            /** Kind */
+            kind?: "voice" | null;
+            /** Duration Ms */
+            duration_ms?: number | null;
+            /**
+             * Waveform
+             * @description JSON array of 64 ints 0–255
+             */
+            waveform?: string | null;
         };
         /** Body_upload_avatar_api_me_avatar_post */
         Body_upload_avatar_api_me_avatar_post: {

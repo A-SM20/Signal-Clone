@@ -1,6 +1,7 @@
 import type { ConversationOut, MessageOut } from "@/lib/api/types";
 import { FileCard, MediaGrid } from "./MediaGrid";
 import { PollBubble } from "./PollBubble";
+import { VoiceBubble } from "./VoiceBubble";
 import { TextBody } from "./TextBody";
 
 /** Picks the right renderer for a message's content. Later kinds (voice, poll) slot in here. */
@@ -19,6 +20,7 @@ export function MessageBody({
   if (m.kind === "poll" && m.poll) {
     return <PollBubble message={m} poll={m.poll} conversation={conversation} meId={meId} outgoing={outgoing} />;
   }
+  if (m.kind === "voice" && m.attachments[0]) return <VoiceBubble attachment={m.attachments[0]} outgoing={outgoing} />;
   if (m.kind === "media") {
     const files = m.attachments.filter((a) => a.kind === "file");
     return (

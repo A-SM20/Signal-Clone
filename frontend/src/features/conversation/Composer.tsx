@@ -172,7 +172,7 @@ export function Composer({ conversation, slots = {} }: { conversation: Conversat
   };
 
   return (
-    <div className="shrink-0 border-t border-divider bg-bg px-3 pt-2 pb-[max(8px,env(safe-area-inset-bottom))]">
+    <div className="relative shrink-0 border-t border-divider bg-bg px-3 pt-2 pb-[max(8px,env(safe-area-inset-bottom))]">
       {editing ? <EditingBar message={editing} onCancel={cancelEdit} /> : slots.above}
       <AttachmentTray items={tray.items} onRemove={tray.remove} />
       <div className="flex items-end gap-1.5">
