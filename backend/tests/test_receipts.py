@@ -110,6 +110,7 @@ def test_typing_relayed_to_others_only(client):
     b = login(client, "+15550100002", "Bob")
     conv = _direct(client, a, b)
     with ws_session(client, a.token) as alice_ws, ws_session(client, b.token) as bob_ws:
+        assert _until(alice_ws, "presence")["data"]["user_id"] == b.user_id  # Bob came online
         _typing(alice_ws, conv, "start")
         frame = _until(bob_ws, "typing")
         assert frame["data"] == {"conversation_id": conv, "user_id": a.user_id, "state": "start"}
