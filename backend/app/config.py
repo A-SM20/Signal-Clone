@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     database_path: str = "./data/signal.db"
     upload_dir: str = "./data/uploads"
     # Env value may be a JSON list or a comma-separated string.
-    cors_origins: Annotated[list[str], NoDecode] = ["http://localhost:3000"]
+    cors_origins: Annotated[list[str], NoDecode] = ["http://localhost:3000", "http://127.0.0.1:3000"]
     signing_secret: str = "dev-secret-change-me"
     mock_otp: str = "123456"
     seed_on_empty: bool = True

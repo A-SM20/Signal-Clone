@@ -27,10 +27,13 @@ export function useSelectionSync(): void {
       fromPopState.current = false;
       return;
     }
+    // Read the live store value: this effect can run with a stale render's selectedId
+    // (e.g. React StrictMode re-running effects), which must not wipe ?c= from the URL.
+    const id = useUi.getState().selectedId;
     const current = parseSelection(window.location.search);
-    if (current === selectedId) return;
-    const url = `${window.location.pathname}${selectionSearch(selectedId)}`;
-    if (current === null && selectedId !== null) window.history.pushState(null, "", url);
+    if (current === id) return;
+    const url = `${window.location.pathname}${selectionSearch(id)}`;
+    if (current === null && id !== null) window.history.pushState(null, "", url);
     else window.history.replaceState(null, "", url);
   }, [selectedId]);
 }
