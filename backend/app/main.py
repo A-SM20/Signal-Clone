@@ -4,7 +4,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import health
+from app.api import auth, health, me
 from app.clock import Clock, SystemClock
 from app.config import Settings
 from app.db import create_engine, create_session_factory
@@ -40,7 +40,8 @@ def create_app(settings: Settings | None = None, clock: Clock | None = None) -> 
         allow_headers=["*"],
     )
     install_error_handlers(app)
-    app.include_router(health.router, prefix="/api")
+    for router in (health.router, auth.router, me.router):
+        app.include_router(router, prefix="/api")
     return app
 
 
