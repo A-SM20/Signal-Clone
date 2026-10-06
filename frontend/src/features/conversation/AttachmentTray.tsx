@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText, Loader2, Plus, X } from "lucide-react";
+import { FileText, Loader2, X } from "lucide-react";
 import { useCallback, useState } from "react";
 import type { AttachmentOut } from "@/lib/api/types";
 import { formatBytes, uploadAttachment } from "@/lib/upload";
@@ -57,28 +57,6 @@ export function useAttachmentTray() {
   const ready = items.length > 0 && items.every((x) => x.uploaded);
   const busy = items.some((x) => !x.uploaded && !x.failed);
   return { items, add, remove, clear, ready, busy };
-}
-
-export function AttachButton({ onFiles }: { onFiles: (files: File[]) => void }) {
-  return (
-    <label
-      className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full text-fg-2 hover:bg-hover hover:text-fg"
-      aria-label="Attach file"
-      title="Attach file"
-    >
-      <Plus size={22} />
-      <input
-        type="file"
-        multiple
-        hidden
-        accept="image/*,.pdf,.txt,.zip,.docx,.xlsx,.pptx"
-        onChange={(e) => {
-          onFiles(Array.from(e.target.files ?? []));
-          e.target.value = "";
-        }}
-      />
-    </label>
-  );
 }
 
 export function AttachmentTray({ items, onRemove }: { items: TrayItem[]; onRemove: (id: string) => void }) {

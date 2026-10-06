@@ -15,7 +15,8 @@ import { useEditing } from "@/stores/editing";
 import { toast } from "@/stores/toast";
 import { socketClient } from "@/lib/realtime/useRealtime";
 import { useBreakpoint } from "@/lib/useBreakpoint";
-import { AttachButton, AttachmentTray, useAttachmentTray } from "./AttachmentTray";
+import { AttachmentTray, useAttachmentTray } from "./AttachmentTray";
+import { ComposerPlusMenu } from "./ComposerPlusMenu";
 import { EditingBar } from "./EditingBar";
 
 const TYPING_THROTTLE_MS = 3000;
@@ -175,7 +176,7 @@ export function Composer({ conversation, slots = {} }: { conversation: Conversat
       {editing ? <EditingBar message={editing} onCancel={cancelEdit} /> : slots.above}
       <AttachmentTray items={tray.items} onRemove={tray.remove} />
       <div className="flex items-end gap-1.5">
-        {!editing && <AttachButton onFiles={tray.add} />}
+        {!editing && <ComposerPlusMenu conversationId={conversation.id} onFiles={tray.add} />}
         {slots.left}
         <div className="flex min-h-10 flex-1 items-center rounded-[20px] bg-surface-2 px-4 py-2">
           <textarea

@@ -87,7 +87,7 @@ export const TimelineMessage = memo(function TimelineMessage({
         }
         below={<ReactionChips message={m} conversation={conversation} meId={meId} mine={mine} />}
       >
-        {extras.body?.(m) ?? <MessageBody message={m} />}
+        {extras.body?.(m) ?? <MessageBody message={m} conversation={conversation} meId={meId} outgoing={mine} />}
       </MessageBubble>
       {menu.element}
     </div>

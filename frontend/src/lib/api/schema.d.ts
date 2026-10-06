@@ -545,6 +545,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/polls/{message_id}/votes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Put Votes */
+        put: operations["put_votes_api_polls__message_id__votes_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/polls/{message_id}/end": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** End Poll */
+        post: operations["end_poll_api_polls__message_id__end_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/search": {
         parameters: {
             query?: never;
@@ -958,6 +992,18 @@ export interface components {
             expires_at: string | null;
             message: components["schemas"]["MessageOut"];
         };
+        /** PollIn */
+        PollIn: {
+            /** Question */
+            question: string;
+            /** Options */
+            options: string[];
+            /**
+             * Allow Multiple
+             * @default false
+             */
+            allow_multiple: boolean;
+        };
         /** PollOptionOut */
         PollOptionOut: {
             /** Id */
@@ -1084,6 +1130,7 @@ export interface components {
              * @default []
              */
             attachment_ids: number[];
+            poll?: components["schemas"]["PollIn"] | null;
         };
         /** SettingsOut */
         SettingsOut: {
@@ -1174,6 +1221,11 @@ export interface components {
              * @default Browser
              */
             device_name: string;
+        };
+        /** VotesIn */
+        VotesIn: {
+            /** Option Ids */
+            option_ids: number[];
         };
     };
     responses: never;
@@ -2604,6 +2656,76 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OkOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_votes_api_polls__message_id__votes_put: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                message_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VotesIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PollOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    end_poll_api_polls__message_id__end_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                message_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PollOut"];
                 };
             };
             /** @description Validation Error */

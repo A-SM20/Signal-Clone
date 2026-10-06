@@ -6,6 +6,7 @@ import { apiFetch } from "@/lib/api/client";
 import { qk } from "@/lib/api/queryKeys";
 import type { MessageOut, MessagePage } from "@/lib/api/types";
 import { type OutboxEntry, useOutbox } from "@/stores/outbox";
+import { pendingPoll } from "@/lib/polls";
 
 const PAGE = 50;
 
@@ -36,7 +37,7 @@ function asMessage(e: OutboxEntry, meId: number, index: number): PendingMessage 
     created_at: e.created_at,
     attachments: e.attachments ?? [],
     reactions: [],
-    poll: null,
+    poll: e.poll ? pendingPoll(e.poll) : null,
     pending: e,
   } as PendingMessage;
 }
