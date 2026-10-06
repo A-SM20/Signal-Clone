@@ -14,6 +14,7 @@ from app.schemas.conversations import ConversationOut, MemberOut, MyStateOut
 from app.services.message_views import message_out, message_out_many
 from app.services.contacts import is_contact
 from app.services.receipts import visible_cursors
+from app.services.safety_numbers import verification_state
 from app.services.users import avatar_url, get_settings, settings_for, to_user_out
 
 # ---------------------------------------------------------------- views
@@ -53,6 +54,7 @@ async def build_views(
                 )
             )
         is_note_to_self = c.kind == "direct" and not others
+        changed = False
         if c.kind == "group":
             title, url, color = c.title or "Group", avatar_url(ctx, c.avatar_path), AVATAR_COLORS[c.id % len(AVATAR_COLORS)]
         elif is_note_to_self:
@@ -60,6 +62,7 @@ async def build_views(
         else:
             other = others[0].user
             title, url, color = other.display_name, avatar_url(ctx, other.avatar_path), other.avatar_color
+            changed = (await verification_state(session, viewer_id, other))[1]
         views.append(
             ConversationOut(
                 id=c.id,
@@ -84,6 +87,7 @@ async def build_views(
                 unread_count=unread.get(c.id, 0),
                 last_message=latest_out.get(c.id),
                 last_activity_at=c.last_activity_at,
+                safety_number_changed=changed,
             )
         )
     return views

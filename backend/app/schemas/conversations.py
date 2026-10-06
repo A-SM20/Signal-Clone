@@ -44,6 +44,7 @@ class ConversationOut(BaseModel):
     unread_count: int
     last_message: MessageOut | None
     last_activity_at: datetime
+    safety_number_changed: bool = False
 
 
 def _strip_nonblank(value: str) -> str:

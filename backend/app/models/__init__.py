@@ -6,6 +6,7 @@ from app.models.message import Message
 from app.models.reaction import Reaction
 from app.models.social import Block, Contact
 from app.models.user import User, UserSettings
+from app.models.verification import IdentityVerification
 
 __all__ = [
     "Attachment",
@@ -15,6 +16,7 @@ __all__ = [
     "Conversation",
     "ConversationMember",
     "Device",
+    "IdentityVerification",
     "Message",
     "Reaction",
     "User",

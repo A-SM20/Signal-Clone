@@ -7,6 +7,7 @@ from app.errors import AppError
 from app.schemas.people import AddContactIn
 from app.schemas.users import UserOut
 from app.services import contacts as contacts_service
+from app.services import safety_numbers as sn
 from app.services.users import users_out
 
 router = APIRouter(tags=["people"])
@@ -58,3 +59,22 @@ async def block_user(user_id: int, user: UserDep, session: SessionDep, ctx: CtxD
 async def unblock_user(user_id: int, user: UserDep, session: SessionDep) -> Response:
     await contacts_service.unblock(session, user.id, user_id)
     return Response(status_code=204)
+
+
+@router.get("/users/{user_id}/safety-number", response_model=sn.SafetyNumberOut)
+async def get_safety_number(user_id: int, user: UserDep, session: SessionDep) -> sn.SafetyNumberOut:
+    return await sn.safety_number(session, user, await sn.get_subject(session, user_id))
+
+
+@router.post("/users/{user_id}/verification", response_model=sn.SafetyNumberOut)
+async def verify(user_id: int, user: UserDep, session: SessionDep, ctx: CtxDep) -> sn.SafetyNumberOut:
+    subject = await sn.get_subject(session, user_id)
+    await sn.mark_verified(session, ctx, user, subject)
+    return await sn.safety_number(session, user, subject)
+
+
+@router.delete("/users/{user_id}/verification", response_model=sn.SafetyNumberOut)
+async def unverify(user_id: int, user: UserDep, session: SessionDep) -> sn.SafetyNumberOut:
+    subject = await sn.get_subject(session, user_id)
+    await sn.clear_verification(session, user, subject)
+    return await sn.safety_number(session, user, subject)
