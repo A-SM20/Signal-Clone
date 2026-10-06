@@ -87,7 +87,7 @@ export function AppShell(slots: ShellSlots) {
     const showDetail = (tab === "chats" && selectedId !== null) || tab === "settings";
     return (
       <div className="flex h-dvh flex-col bg-bg">
-        <div className="min-h-0 flex-1">{showDetail ? (tab === "settings" ? slots.settingsList : detail) : list}</div>
+        <div className="relative min-h-0 flex-1">{showDetail ? (tab === "settings" ? slots.settingsList : detail) : list}</div>
         {!showDetail && <MobileTabBar unread={unread} />}
         {slots.overlays}
       </div>
