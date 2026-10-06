@@ -18,7 +18,16 @@ jobs:
           cache: pip
           cache-dependency-path: backend/requirements-dev.txt
       - run: pip install -r requirements-dev.txt
-      - run: python -m pytest -q -ra
+      - name: pytest
+        shell: bash
+        run: |
+          set -o pipefail
+          python -m pytest -q -ra 2>&1 | tee pytest.log
+      - name: Show failures on the run page
+        if: failure()
+        shell: bash
+        run: |
+          { echo '### Backend test failures'; echo '```'; grep -E "^(FAILED|ERROR)|Error|assert" pytest.log | head -40; echo; tail -80 pytest.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
 
   frontend:
     runs-on: ubuntu-latest
