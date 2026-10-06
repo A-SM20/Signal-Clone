@@ -15,6 +15,9 @@ from app.models import (
     Message,
     MessageRevision,
     PinnedMessage,
+    Poll,
+    PollOption,
+    PollVote,
     Reaction,
     User,
     UserSettings,
@@ -213,4 +216,30 @@ async def seed_pins(ctx: SeedContext) -> None:
     )
 
 
-FEATURE_SEEDERS: list[Callable[[SeedContext], Awaitable[None]]] = [seed_core, seed_verifications, seed_edits, seed_pins]
+async def seed_polls(ctx: SeedContext) -> None:
+    """Alice asks Weekend Hike which trail to do; Bob and Priya have voted."""
+    message = await ctx.add_message("hike", "alice", None, 25, kind="poll")
+    ctx.session.add(Poll(message_id=message.id, question="Saturday trail?", allow_multiple=False))
+    await ctx.session.flush()
+    options = [
+        PollOption(poll_message_id=message.id, position=i, text=t)
+        for i, t in enumerate(["Eagle Peak", "Mount Tam loop", "Muir Woods"])
+    ]
+    ctx.session.add_all(options)
+    await ctx.session.flush()
+    ctx.session.add_all(
+        [
+            PollVote(option_id=options[0].id, user_id=ctx.users["bob"].id, voted_at=ctx.ago(20)),
+            PollVote(option_id=options[0].id, user_id=ctx.users["priya"].id, voted_at=ctx.ago(18)),
+            PollVote(option_id=options[1].id, user_id=ctx.users["lucas"].id, voted_at=ctx.ago(15)),
+        ]
+    )
+
+
+FEATURE_SEEDERS: list[Callable[[SeedContext], Awaitable[None]]] = [
+    seed_core,
+    seed_verifications,
+    seed_edits,
+    seed_pins,
+    seed_polls,
+]

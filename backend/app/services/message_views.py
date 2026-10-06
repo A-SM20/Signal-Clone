@@ -44,14 +44,16 @@ async def message_out_many(
     outs = [_base_out(m) for m in messages]
     from app.services import attachments  # avoid import cycle (attachments -> schemas only)
 
-    from app.services import reactions
+    from app.services import polls, reactions
 
     ids = [m.id for m in messages]
     files = await attachments.for_messages(session, ids)
     reacted = await reactions.for_messages(session, ids)
+    poll_outs = await polls.for_messages(session, ids)
     for out in outs:
         out.attachments = [attachments.to_out(ctx, a) for a in files.get(out.id, [])]
         out.reactions = reacted.get(out.id, [])
+        out.poll = poll_outs.get(out.id)
     reply_ids = {m.reply_to_id for m in messages if m.reply_to_id}
     if reply_ids:
         originals = {r.id: r for r in await session.scalars(select(Message).where(Message.id.in_(reply_ids)))}

@@ -9,7 +9,7 @@ from app.models import Conversation, ConversationMember, Message, User
 from app.repositories import messages as repo
 from app.schemas.messages import MessageOut, MessagePage, SendMessageIn
 from app.services.conversations import active_member_ids, publish_message
-from app.services import attachments, requests
+from app.services import attachments, polls, requests
 from app.services.message_views import message_out, message_out_many
 
 
@@ -52,6 +52,8 @@ async def send_message(
     try:
         await session.flush()
         await attachments.link(session, sender, message, data.attachment_ids)
+        if data.poll is not None:
+            await polls.create(session, message, data.poll)
     except IntegrityError:  # a concurrent retry won the race
         await session.rollback()
         existing = await repo.by_client_id(session, sender.id, client_id)

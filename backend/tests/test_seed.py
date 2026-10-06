@@ -136,3 +136,11 @@ def test_seed_pin_in_phoenix(seeded_client):
     a = login(seeded_client, "+15550100001")
     phoenix = next(c for c in seeded_client.get("/api/conversations", headers=a.headers).json() if c["title"] == "Project Phoenix")
     assert len(phoenix["pins"]) == 1 and phoenix["pins"][0]["message"]["body"]
+
+
+def test_seed_poll_in_hike(seeded_client):
+    a = login(seeded_client, "+15550100001")
+    hike = next(c for c in seeded_client.get("/api/conversations", headers=a.headers).json() if c["title"] == "Weekend Hike")
+    items = seeded_client.get(f"/api/conversations/{hike['id']}/messages", headers=a.headers).json()["items"]
+    poll = next(m for m in items if m["kind"] == "poll")["poll"]
+    assert poll["question"] == "Saturday trail?" and sum(o["vote_count"] for o in poll["options"]) >= 2

@@ -70,7 +70,21 @@ class MessagePage(BaseModel):
     has_more: bool
 
 
-SUPPORTED_KINDS = {"text", "media"}  # extended as voice/poll land
+SUPPORTED_KINDS = {"text", "media", "poll"}  # extended as voice lands
+
+PollText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
+
+
+class PollIn(BaseModel):
+    question: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
+    options: Annotated[list[PollText], Field(min_length=2, max_length=10)]
+    allow_multiple: bool = False
+
+    @model_validator(mode="after")
+    def _unique(self):
+        if len({o.casefold() for o in self.options}) != len(self.options):
+            raise ValueError("poll options must be different")
+        return self
 
 
 class SendMessageIn(BaseModel):
@@ -79,6 +93,7 @@ class SendMessageIn(BaseModel):
     body: Annotated[str, StringConstraints(max_length=MAX_BODY_LENGTH)] | None = None
     reply_to_id: int | None = None
     attachment_ids: Annotated[list[int], Field(max_length=MAX_ALBUM_SIZE)] = []
+    poll: PollIn | None = None
 
     @model_validator(mode="after")
     def _check(self):
@@ -91,6 +106,10 @@ class SendMessageIn(BaseModel):
             raise ValueError("media messages need at least one attachment")
         if self.kind == "text" and self.attachment_ids:
             raise ValueError("use kind 'media' to send attachments")
+        if (self.kind == "poll") != (self.poll is not None):
+            raise ValueError("poll messages need a poll, and only poll messages may have one")
+        if self.kind == "poll" and (self.body or self.attachment_ids):
+            raise ValueError("poll messages carry only the poll")
         return self
 
 
