@@ -1,12 +1,24 @@
 import { create } from "zustand";
 
 export type Tab = "chats" | "calls" | "stories" | "settings";
+export type SettingsSection =
+  | "profile"
+  | "account"
+  | "devices"
+  | "appearance"
+  | "chats"
+  | "notifications"
+  | "privacy"
+  | "data"
+  | "help";
 export type Panel = null | "conversation-settings" | "new-chat" | "new-group" | "archived" | "requests";
 
 interface UiState {
   tab: Tab;
   selectedId: number | null;
   panel: Panel;
+  settingsSection: SettingsSection | null;
+  openSettings: (section: SettingsSection | null) => void;
   select: (id: number | null) => void;
   setTab: (tab: Tab) => void;
   openPanel: (panel: Exclude<Panel, null>) => void;
@@ -17,6 +29,8 @@ export const useUi = create<UiState>()((set) => ({
   tab: "chats",
   selectedId: null,
   panel: null,
+  settingsSection: null,
+  openSettings: (settingsSection) => set({ settingsSection }),
   select: (id) =>
     set((s) => ({
       selectedId: id,

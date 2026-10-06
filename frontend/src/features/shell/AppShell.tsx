@@ -16,6 +16,7 @@ import { MobileTabBar } from "./MobileTabBar";
 import { NavRail } from "./NavRail";
 import { ResizableListPane } from "./ResizableListPane";
 import { useSelectionSync } from "./useSelectionSync";
+import { useNotifications } from "@/lib/useNotifications";
 
 export interface ShellSlots {
   chatList: ReactNode;
@@ -47,6 +48,7 @@ export function AppShell(slots: ShellSlots) {
   const breakpoint = useBreakpoint();
   const unread = useUnreadTotal();
   useSelectionSync();
+  useNotifications(unread);
 
   const { data: me } = useQuery({
     queryKey: qk.me,
