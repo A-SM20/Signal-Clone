@@ -43,3 +43,22 @@ async def current_user(session: SessionDep, device: DeviceDep) -> User:
 
 
 UserDep = Annotated[User, Depends(current_user)]
+
+
+async def member_of(session: AsyncSession, conversation_id: int, user_id: int, *, active: bool):
+    """The caller's membership row. Non-members get 404 so conversation ids don't leak."""
+    from app.repositories.conversations import membership
+
+    member = await membership(session, conversation_id, user_id)
+    if member is None:
+        raise AppError(404, "not_found", "Conversation not found")
+    if active and member.left_at is not None:
+        raise AppError(403, "not_active_member", "You are no longer a member of this group")
+    return member
+
+
+async def admin_of(session: AsyncSession, conversation_id: int, user_id: int):
+    member = await member_of(session, conversation_id, user_id, active=True)
+    if member.role != "admin":
+        raise AppError(403, "not_admin", "Only admins can do that")
+    return member
