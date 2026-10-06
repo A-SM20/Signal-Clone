@@ -1,6 +1,6 @@
 "use client";
 
-import { Archive, ArchiveRestore, ArrowLeft, BellOff, Bell, Ellipsis, Pin, PinOff, SquarePen, WifiOff } from "lucide-react";
+import { Archive, ArchiveRestore, ArrowLeft, Bell, BellOff, Ellipsis, MessageSquareDashed, Pin, PinOff, SquarePen, WifiOff } from "lucide-react";
 import { type MouseEvent, useCallback, useEffect, useRef, useState } from "react";
 import { Avatar } from "@/components/ui/Avatar";
 import { ContextMenu, type MenuItem } from "@/components/ui/ContextMenu";
@@ -77,20 +77,23 @@ export function ChatsPane({ extra }: { extra?: React.ReactNode } = {}) {
   if (panel === "new-group") return <CreateGroupFlow />;
 
   const showArchived = panel === "archived";
-  const visible = (conversations ?? []).filter(
-    (c) => c.me.is_archived === showArchived && c.me.request_state !== "pending",
-  );
+  const showRequests = panel === "requests";
+  const all = conversations ?? [];
+  const requests = all.filter((c) => c.me.request_state === "pending");
+  const visible = showRequests
+    ? requests
+    : all.filter((c) => c.me.is_archived === showArchived && c.me.request_state !== "pending");
   const archivedCount = (conversations ?? []).filter((c) => c.me.is_archived).length;
 
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex h-[var(--header-height)] shrink-0 items-center gap-1 px-4">
-        {showArchived ? (
+        {showArchived || showRequests ? (
           <>
             <IconButton label="Back" onClick={closePanel} className="-ml-2">
               <ArrowLeft size={20} />
             </IconButton>
-            <h1 className="flex-1 text-[17px] font-semibold">Archived chats</h1>
+            <h1 className="flex-1 text-[17px] font-semibold">{showRequests ? "Message requests" : "Archived chats"}</h1>
           </>
         ) : (
           <>
@@ -122,7 +125,7 @@ export function ChatsPane({ extra }: { extra?: React.ReactNode } = {}) {
           </>
         )}
       </div>
-      {!showArchived && (
+      {!showArchived && !showRequests && (
         <div className="shrink-0 px-4 pb-3">
           <SearchInput ref={searchRef} value={query} onChange={setQuery} />
         </div>
@@ -132,7 +135,21 @@ export function ChatsPane({ extra }: { extra?: React.ReactNode } = {}) {
         <SearchResults query={query.trim()} onDone={() => setQuery("")} />
       ) : (
         <div className="min-h-0 flex-1 overflow-y-auto pb-3">
-          {!showArchived && extra}
+          {!showArchived && !showRequests && extra}
+          {!showArchived && !showRequests && requests.length > 0 && (
+            <button
+              onClick={() => openPanel("requests")}
+              className="mx-2 mb-1 flex w-[calc(100%-16px)] items-center gap-3 rounded-xl px-2.5 py-2.5 text-left hover:bg-hover"
+            >
+              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-2 text-fg-2">
+                <MessageSquareDashed size={22} />
+              </span>
+              <span className="flex-1 text-[14px] font-semibold">Message requests</span>
+              <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-bold text-white">
+                {requests.length}
+              </span>
+            </button>
+          )}
           {isLoading && <p className="px-4 pt-6 text-center text-[13px] text-fg-2">Loading chats…</p>}
           <ul>
             {visible.map((c) => (
@@ -146,7 +163,7 @@ export function ChatsPane({ extra }: { extra?: React.ReactNode } = {}) {
               />
             ))}
           </ul>
-          {!showArchived && archivedCount > 0 && (
+          {!showArchived && !showRequests && archivedCount > 0 && (
             <button
               onClick={() => openPanel("archived")}
               className="mx-2 mt-1 flex w-[calc(100%-16px)] items-center gap-3 rounded-xl px-2.5 py-3 text-left text-[14px] font-medium text-fg-2 hover:bg-hover"
@@ -159,12 +176,12 @@ export function ChatsPane({ extra }: { extra?: React.ReactNode } = {}) {
           )}
           {conversations && !visible.length && (
             <p className="px-6 pt-10 text-center text-[13px] text-fg-2">
-              {showArchived ? "No archived chats" : "No chats yet. Tap the pencil to start one."}
+              {showRequests ? "No message requests" : showArchived ? "No archived chats" : "No chats yet. Tap the pencil to start one."}
             </p>
           )}
         </div>
       )}
-      {breakpoint === "mobile" && !showArchived && (
+      {breakpoint === "mobile" && !showArchived && !showRequests && (
         <button
           aria-label="New chat"
           onClick={() => openPanel("new-chat")}
