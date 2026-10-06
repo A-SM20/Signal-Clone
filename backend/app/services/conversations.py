@@ -12,14 +12,10 @@ from app.realtime import events
 from app.repositories import conversations as repo
 from app.schemas.conversations import ConversationOut, MemberOut, MyStateOut
 from app.services.message_views import message_out, message_out_many
+from app.services.receipts import visible_cursors
 from app.services.users import avatar_url, settings_for, to_user_out
 
 # ---------------------------------------------------------------- views
-
-
-def _member_cursors(member: ConversationMember) -> tuple[int | None, int | None]:
-    """Hook for receipt privacy rules (refined by the receipts service)."""
-    return member.last_delivered_message_id, member.last_read_message_id
 
 
 async def build_views(
@@ -43,7 +39,7 @@ async def build_views(
         others = [m for m in ms if m.user_id != viewer_id]
         member_outs = []
         for m in ms:
-            delivered, read = _member_cursors(m)
+            delivered, read = visible_cursors(m, viewer_id, prefs.get(viewer_id), prefs.get(m.user_id))
             member_outs.append(
                 MemberOut(
                     user=to_user_out(m.user, ctx, prefs.get(m.user_id)),
