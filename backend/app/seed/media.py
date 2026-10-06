@@ -58,3 +58,29 @@ def store(upload_dir: str, data: bytes, ext: str) -> str:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(data)
     return key
+
+
+def voice_tone(seconds: float = 6.0, rate: int = 16000) -> tuple[bytes, list[int]]:
+    """A short hummed melody as 16-bit mono WAV, plus its 64-bar waveform (RMS per bucket, 0-255)."""
+    import math
+    import struct
+    import wave
+
+    notes = [262, 294, 330, 349, 392, 349, 330, 294]
+    total = int(seconds * rate)
+    samples = []
+    for i in range(total):
+        t = i / rate
+        note = notes[int(t / seconds * len(notes)) % len(notes)]
+        envelope = 0.35 + 0.65 * abs(math.sin(math.pi * t * 1.6))  # syllable-like swells
+        samples.append(envelope * math.sin(2 * math.pi * note * t) * 0.6)
+    out = io.BytesIO()
+    with wave.open(out, "wb") as w:
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(rate)
+        w.writeframes(b"".join(struct.pack("<h", int(s * 32767)) for s in samples))
+    size = total // 64
+    rms = [math.sqrt(sum(s * s for s in samples[b * size:(b + 1) * size]) / size) for b in range(64)]
+    peak = max(rms) or 1
+    return out.getvalue(), [round(v / peak * 255) for v in rms]

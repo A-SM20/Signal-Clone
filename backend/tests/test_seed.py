@@ -154,3 +154,13 @@ def test_seed_folders(seeded_client):
     assert unread["unread_only"] and unread["include_direct"] and unread["include_groups"]
     titles = {c["id"]: c["title"] for c in seeded_client.get("/api/conversations", headers=a.headers).json()}
     assert {titles[cid] for cid in work["conversation_ids"]} == {"Project Phoenix", "Daniel Kim"}
+
+
+def test_seed_voice_note(seeded_client):
+    a = login(seeded_client, "+15550100001")
+    conv = next(c for c in seeded_client.get("/api/conversations", headers=a.headers).json() if c["title"] == "Bob Martinez")
+    items = seeded_client.get(f"/api/conversations/{conv['id']}/messages?limit=100", headers=a.headers).json()["items"]
+    voice = next(m for m in items if m["kind"] == "voice")["attachments"][0]
+    assert voice["kind"] == "voice" and voice["mime_type"] == "audio/wav"
+    assert 1000 <= voice["duration_ms"] <= 300000 and len(voice["waveform"]) == 64
+    assert seeded_client.get(voice["url"]).status_code == 200

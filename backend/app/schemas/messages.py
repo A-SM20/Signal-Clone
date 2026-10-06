@@ -70,7 +70,7 @@ class MessagePage(BaseModel):
     has_more: bool
 
 
-SUPPORTED_KINDS = {"text", "media", "poll"}  # extended as voice lands
+SUPPORTED_KINDS = {"text", "media", "poll", "voice"}
 
 PollText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
 
@@ -106,6 +106,8 @@ class SendMessageIn(BaseModel):
             raise ValueError("media messages need at least one attachment")
         if self.kind == "text" and self.attachment_ids:
             raise ValueError("use kind 'media' to send attachments")
+        if self.kind == "voice" and (len(self.attachment_ids) != 1 or self.body):
+            raise ValueError("voice messages carry exactly one voice attachment and no text")
         if (self.kind == "poll") != (self.poll is not None):
             raise ValueError("poll messages need a poll, and only poll messages may have one")
         if self.kind == "poll" and (self.body or self.attachment_ids):

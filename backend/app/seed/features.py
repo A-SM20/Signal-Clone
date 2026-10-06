@@ -26,7 +26,7 @@ from app.models import (
 )
 from app.seed.build import SeedContext
 from app.seed.data import CONTACT_PAIRS, DIRECTS, GROUPS, SCRIPTS, USERS
-from app.seed.media import landscape, pdf_document, store
+from app.seed.media import landscape, pdf_document, store, voice_tone
 from app.services.auth import new_identity_key
 
 GROUP_CREATED_BEFORE_FIRST_LINE = 30  # minutes
@@ -111,6 +111,15 @@ async def _attach(ctx: SeedContext, message, media: dict) -> None:
                 width=960, height=720, position=position, created_at=message.created_at,
             )
         )
+    if "voice" in media:
+        data, bars = voice_tone(media["voice"])
+        ctx.session.add(
+            Attachment(
+                message_id=message.id, uploader_id=uploader, kind="voice", mime_type="audio/wav",
+                size_bytes=len(data), original_name="Voice message.wav", storage_key=store(ctx.settings.upload_dir, data, ".wav"),
+                duration_ms=int(media["voice"] * 1000), waveform=bars, position=0, created_at=message.created_at,
+            )
+        )
     if "file" in media:
         data = pdf_document(media["file"].removesuffix(".pdf"))
         ctx.session.add(
@@ -135,10 +144,11 @@ async def _messages(ctx: SeedContext) -> None:
                 event = {"type": "timer_changed", "actor_id": ctx.users[extras["actor"]].id, "seconds": timer}
                 await ctx.add_message(key, None, None, minutes_ago, system_event=event)
                 continue
-            has_media = "images" in extras or "file" in extras
+            has_media = "images" in extras or "file" in extras or "voice" in extras
+            kind = "voice" if "voice" in extras else "media" if has_media else "text"
             reply_to = ctx.message_ids[key][-extras["reply"]] if "reply" in extras else None
             message = await ctx.add_message(
-                key, sender, text, minutes_ago, kind="media" if has_media else "text", reply_to_id=reply_to
+                key, sender, text or None, minutes_ago, kind=kind, reply_to_id=reply_to
             )
             if timer:
                 message.expires_at = message.created_at + timedelta(seconds=timer)

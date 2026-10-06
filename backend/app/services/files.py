@@ -31,7 +31,9 @@ ALLOWED_TYPES: dict[str, str] = {
     "audio/ogg": ".ogg",
     "audio/mp4": ".m4a",
     "audio/x-m4a": ".m4a",
+    "audio/wav": ".wav",
 }
+AUDIO_TYPES = {m for m in ALLOWED_TYPES if m.startswith("audio/")}
 IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
 MIME_BY_EXT = {ext: mime for mime, ext in ALLOWED_TYPES.items()}
 STORAGE_KEY = re.compile(r"^[0-9a-f]{32}\.[a-z0-9]{1,5}$")

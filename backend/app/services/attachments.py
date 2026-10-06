@@ -1,3 +1,4 @@
+import json
 from collections import defaultdict
 
 from fastapi import UploadFile
@@ -8,7 +9,8 @@ from app.context import Ctx
 from app.errors import AppError
 from app.models import Attachment, Message, User
 from app.schemas.messages import AttachmentOut
-from app.services.files import IMAGE_TYPES, delete_file, save_upload, sign_path
+from app.constants import MAX_VOICE_MS, WAVEFORM_BARS
+from app.services.files import AUDIO_TYPES, IMAGE_TYPES, delete_file, save_upload, sign_path
 
 
 def to_out(ctx: Ctx, a: Attachment) -> AttachmentOut:
@@ -24,6 +26,32 @@ def to_out(ctx: Ctx, a: Attachment) -> AttachmentOut:
         duration_ms=a.duration_ms,
         waveform=a.waveform,
     )
+
+
+def parse_waveform(raw: str | None) -> list[int]:
+    try:
+        values = json.loads(raw) if raw else None
+    except ValueError:
+        values = None
+    if (
+        not isinstance(values, list)
+        or len(values) != WAVEFORM_BARS
+        or not all(isinstance(v, int) and not isinstance(v, bool) and 0 <= v <= 255 for v in values)
+    ):
+        raise AppError(422, "invalid_waveform", f"waveform must be {WAVEFORM_BARS} integers from 0 to 255")
+    return values
+
+
+async def upload_voice(
+    session: AsyncSession, ctx: Ctx, uploader: User, file: UploadFile, duration_ms: int | None, waveform: str | None
+) -> Attachment:
+    """Voice notes carry their length and a 64-bar waveform so bubbles render before the audio loads."""
+    if duration_ms is None or not 1 <= duration_ms <= MAX_VOICE_MS:
+        raise AppError(422, "invalid_duration", "Voice notes must be between 1 ms and 5 minutes")
+    bars = parse_waveform(waveform)
+    if (file.content_type or "").split(";")[0].strip().lower() not in AUDIO_TYPES:
+        raise AppError(422, "invalid_voice", "Voice notes must be audio")
+    return await upload(session, ctx, uploader, file, kind="voice", duration_ms=duration_ms, waveform=bars)
 
 
 async def upload(session: AsyncSession, ctx: Ctx, uploader: User, file: UploadFile, **extra) -> Attachment:
@@ -57,6 +85,8 @@ async def link(session: AsyncSession, sender: User, message: Message, ids: list[
             raise AppError(400, "invalid_attachment", "Attachment not found")
         if a.message_id is not None:
             raise AppError(409, "attachment_in_use", "That attachment was already sent")
+        if (a.kind == "voice") != (message.kind == "voice"):
+            raise AppError(400, "invalid_attachment", "Voice notes are sent as voice messages only")
         a.message_id = message.id
         a.position = position
 
