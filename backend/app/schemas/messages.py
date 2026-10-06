@@ -92,3 +92,19 @@ class SendMessageIn(BaseModel):
         if self.kind == "text" and self.attachment_ids:
             raise ValueError("use kind 'media' to send attachments")
         return self
+
+
+class EditMessageIn(BaseModel):
+    body: Annotated[str, StringConstraints(max_length=MAX_BODY_LENGTH)]
+
+    @model_validator(mode="after")
+    def _check(self):
+        self.body = self.body.strip()
+        if not self.body:
+            raise ValueError("message body must not be empty")
+        return self
+
+
+class RevisionOut(BaseModel):
+    body: str
+    created_at: datetime

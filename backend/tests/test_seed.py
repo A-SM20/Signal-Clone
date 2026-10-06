@@ -119,3 +119,14 @@ def test_seed_verifications(seeded_client):
     assert sn_daniel["verified"] is False and sn_daniel["changed"] is True
     assert people["Daniel Kim"]["safety_number_changed"] is True
     assert people["Bob Martinez"]["safety_number_changed"] is False
+
+
+def test_seed_edits(seeded_client):
+    a = login(seeded_client, "+15550100001")
+    conv = next(c for c in seeded_client.get("/api/conversations", headers=a.headers).json() if c["title"] == "Bob Martinez")
+    items = seeded_client.get(f"/api/conversations/{conv['id']}/messages?limit=100", headers=a.headers).json()["items"]
+    edited = [m for m in items if m["edited_at"]]
+    deleted = [m for m in items if m["deleted_at"]]
+    assert len(edited) == 1 and len(deleted) == 1 and deleted[0]["body"] is None
+    revs = seeded_client.get(f"/api/messages/{edited[0]['id']}/revisions", headers=a.headers).json()
+    assert len(revs) == 1 and revs[0]["body"] != edited[0]["body"]

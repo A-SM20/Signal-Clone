@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Query, Response
 from pydantic import BaseModel, Field
@@ -7,8 +7,9 @@ from sqlalchemy import select
 from app.api.deps import CtxDep, SessionDep, UserDep, member_of
 from app.errors import AppError
 from app.models import Message, User
-from app.schemas.messages import MessageOut, MessagePage, ReactionOut, SendMessageIn
+from app.schemas.messages import EditMessageIn, MessageOut, MessagePage, ReactionOut, RevisionOut, SendMessageIn
 from app.schemas.users import UserOut
+from app.services import edits
 from app.services import messages as svc
 from app.services import reactions as reaction_svc
 from app.services.receipts import message_details
@@ -96,3 +97,27 @@ async def put_reaction(message_id: int, body: ReactionIn, user: UserDep, session
 async def delete_reaction(message_id: int, user: UserDep, session: SessionDep, ctx: CtxDep) -> ReactionsOut:
     message = await _visible_message(session, message_id, user.id, active=True)
     return ReactionsOut(reactions=await reaction_svc.unreact(session, ctx, user, message))
+
+
+@router.patch("/messages/{message_id}", response_model=MessageOut)
+async def edit_message(message_id: int, body: EditMessageIn, user: UserDep, session: SessionDep, ctx: CtxDep) -> MessageOut:
+    message = await _visible_message(session, message_id, user.id, active=True)
+    return await edits.edit_message(session, ctx, user, message, body.body)
+
+
+@router.get("/messages/{message_id}/revisions", response_model=list[RevisionOut])
+async def list_revisions(message_id: int, user: UserDep, session: SessionDep) -> list[RevisionOut]:
+    message = await _visible_message(session, message_id, user.id, active=False)
+    return await edits.revisions(session, message)
+
+
+@router.delete("/messages/{message_id}", status_code=204)
+async def delete_message(
+    message_id: int, user: UserDep, session: SessionDep, ctx: CtxDep, scope: Literal["me", "everyone"] = "me"
+) -> Response:
+    message = await _visible_message(session, message_id, user.id, active=scope == "everyone")
+    if scope == "everyone":
+        await edits.delete_for_everyone(session, ctx, user, message)
+    else:
+        await edits.delete_for_me(session, ctx, user, message)
+    return Response(status_code=204)

@@ -6,7 +6,7 @@ from sqlalchemy import ColumnElement, and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models import Block, Conversation, ConversationMember, Message
+from app.models import Block, Conversation, ConversationMember, HiddenMessage, Message
 
 
 def visible_to(member) -> ColumnElement[bool]:
@@ -19,6 +19,12 @@ def not_blocked_by(viewer_id: int) -> ColumnElement[bool]:
     """Silent blocking: messages from people the viewer blocked are invisible to them."""
     blocked = select(Block.blocked_id).where(Block.blocker_id == viewer_id)
     return or_(Message.sender_id.is_(None), Message.sender_id.not_in(blocked))
+
+
+def not_hidden_for(viewer_id: int) -> ColumnElement[bool]:
+    """Delete-for-me: messages the viewer hid are gone from every list, count and preview they see."""
+    hidden = select(HiddenMessage.message_id).where(HiddenMessage.user_id == viewer_id)
+    return Message.id.not_in(hidden)
 
 
 async def membership(session: AsyncSession, conversation_id: int, user_id: int) -> ConversationMember | None:
@@ -63,6 +69,7 @@ async def unread_counts(session: AsyncSession, viewer_id: int, conversation_ids:
             Message.deleted_at.is_(None),
             visible_to(me),
             not_blocked_by(viewer_id),
+            not_hidden_for(viewer_id),
         )
         .group_by(Message.conversation_id)
     )
@@ -76,7 +83,12 @@ async def latest_visible_messages(
     latest_id = (
         select(func.max(Message.id))
         .join(me, and_(me.conversation_id == Message.conversation_id, me.user_id == viewer_id))
-        .where(Message.conversation_id.in_(conversation_ids), visible_to(me), not_blocked_by(viewer_id))
+        .where(
+            Message.conversation_id.in_(conversation_ids),
+            visible_to(me),
+            not_blocked_by(viewer_id),
+            not_hidden_for(viewer_id),
+        )
         .group_by(Message.conversation_id)
     )
     rows = await session.scalars(select(Message).where(Message.id.in_(latest_id)))

@@ -12,6 +12,8 @@ from app.models import (
     Conversation,
     ConversationMember,
     IdentityVerification,
+    Message,
+    MessageRevision,
     Reaction,
     User,
     UserSettings,
@@ -182,4 +184,17 @@ async def seed_verifications(ctx: SeedContext) -> None:
     )
 
 
-FEATURE_SEEDERS: list[Callable[[SeedContext], Awaitable[None]]] = [seed_core, seed_verifications]
+async def seed_edits(ctx: SeedContext) -> None:
+    """In Alice–Bob: Alice fixed a typo in one message (one revision); Bob deleted one for everyone."""
+    ids = ctx.message_ids["alice_bob"]
+    edited = await ctx.session.get_one(Message, ids[3])
+    ctx.session.add(
+        MessageRevision(message_id=edited.id, body="Oof, thats a big one. Im in tho", created_at=edited.created_at + timedelta(minutes=1))
+    )
+    edited.edited_at = edited.created_at + timedelta(minutes=1)
+    deleted = await ctx.session.get_one(Message, ids[4])
+    deleted.body = None
+    deleted.deleted_at = deleted.created_at + timedelta(minutes=2)
+
+
+FEATURE_SEEDERS: list[Callable[[SeedContext], Awaitable[None]]] = [seed_core, seed_verifications, seed_edits]
