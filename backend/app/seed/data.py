@@ -38,6 +38,7 @@ GROUPS = {
 # Conversation scripts: (minutes ago of the first line, [(sender, minutes after previous line, text[, media])]).
 # Optional extras: {"images": [names]} / {"file": "name.pdf"} (generated media, app/seed/media.py),
 # {"reply": n} (quote the message n lines earlier), {"reactions": {user_key: emoji}}.
+# A "timer" line (sender "timer", text = seconds, extras {"actor": key}) turns on disappearing messages.
 SCRIPTS: dict[str, tuple[float, list[tuple]]] = {
     "alice_bob": (1940, [
         ("bob", 0, "Hey! Are you still up for the hike on Saturday?"),
@@ -111,7 +112,8 @@ SCRIPTS: dict[str, tuple[float, list[tuple]]] = {
         ("alice", 30, "Wouldn't miss it! What should I bring?"),
         ("emma", 5, "Maybe dessert? The kids loved your brownies last time"),
         ("alice", 2, "Brownies it is 🍫"),
-        ("emma", 2000, "The kids keep asking when Aunt Alice is visiting again"),
+        ("timer", 1500, "604800", {"actor": "emma"}),
+        ("emma", 500, "The kids keep asking when Aunt Alice is visiting again"),
         ("alice", 60, "Tell them soon! I'll bring the board game"),
         ("emma", 3, "They'll be thrilled"),
         ("alice", 2500, "Here's that plant care guide I mentioned"),

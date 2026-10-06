@@ -1,7 +1,9 @@
 from datetime import datetime
 from typing import Annotated, Literal
 
-from pydantic import AfterValidator, BaseModel, Field, StringConstraints
+from pydantic import AfterValidator, BaseModel, Field, StringConstraints, field_validator
+
+from app.constants import DISAPPEARING_OPTIONS
 
 from app.schemas.messages import MessageOut
 from app.schemas.users import UserOut
@@ -66,6 +68,14 @@ class GroupIn(BaseModel):
 class ConversationPatch(BaseModel):
     title: Title | None = None
     description: Annotated[str, StringConstraints(max_length=480)] | None = None
+    disappearing_seconds: int | None = None
+
+    @field_validator("disappearing_seconds")
+    @classmethod
+    def _allowed_timer(cls, value: int | None) -> int | None:
+        if value is not None and value not in DISAPPEARING_OPTIONS:
+            raise ValueError(f"must be one of {DISAPPEARING_OPTIONS}")
+        return value
 
 
 class MyStatePatch(BaseModel):

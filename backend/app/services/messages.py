@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -30,6 +32,7 @@ async def send_message(
 
     await _validate_reply(session, member.conversation_id, data.reply_to_id)
     conversation = await session.get_one(Conversation, member.conversation_id)
+    now = ctx.clock.now()
     message = Message(
         conversation_id=conversation.id,
         sender_id=sender.id,
@@ -37,7 +40,9 @@ async def send_message(
         kind=data.kind,
         body=data.body,
         reply_to_id=data.reply_to_id,
-        created_at=ctx.clock.now(),
+        created_at=now,
+        # Simplification: the timer starts at send for everyone (Signal starts it when each reader sees it).
+        expires_at=now + timedelta(seconds=conversation.disappearing_seconds) if conversation.disappearing_seconds else None,
     )
     session.add(message)
     try:

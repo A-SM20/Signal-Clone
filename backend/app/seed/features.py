@@ -1,6 +1,7 @@
 """Seeders run in order; later features append their own seed_<feature> to FEATURE_SEEDERS."""
 
 from collections.abc import Awaitable, Callable
+from datetime import timedelta
 
 from sqlalchemy import select
 
@@ -101,14 +102,23 @@ async def _attach(ctx: SeedContext, message, media: dict) -> None:
 async def _messages(ctx: SeedContext) -> None:
     for key, (start, lines) in SCRIPTS.items():
         minutes_ago = start
+        timer = 0
         for sender, gap, text, *rest in lines:
             minutes_ago -= gap
             extras = rest[0] if rest else {}
+            if sender == "timer":
+                timer = int(text)
+                ctx.convs[key].disappearing_seconds = timer
+                event = {"type": "timer_changed", "actor_id": ctx.users[extras["actor"]].id, "seconds": timer}
+                await ctx.add_message(key, None, None, minutes_ago, system_event=event)
+                continue
             has_media = "images" in extras or "file" in extras
             reply_to = ctx.message_ids[key][-extras["reply"]] if "reply" in extras else None
             message = await ctx.add_message(
                 key, sender, text, minutes_ago, kind="media" if has_media else "text", reply_to_id=reply_to
             )
+            if timer:
+                message.expires_at = message.created_at + timedelta(seconds=timer)
             if has_media:
                 await _attach(ctx, message, extras)
             for user_key, emoji in extras.get("reactions", {}).items():

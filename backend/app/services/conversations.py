@@ -13,7 +13,7 @@ from app.repositories import conversations as repo
 from app.schemas.conversations import ConversationOut, MemberOut, MyStateOut
 from app.services.message_views import message_out, message_out_many
 from app.services.receipts import visible_cursors
-from app.services.users import avatar_url, settings_for, to_user_out
+from app.services.users import avatar_url, get_settings, settings_for, to_user_out
 
 # ---------------------------------------------------------------- views
 
@@ -154,7 +154,10 @@ async def get_or_create_direct(session: AsyncSession, ctx: Ctx, me: User, other_
     if existing is not None:
         return existing, False
     now = ctx.clock.now()
-    conversation = Conversation(kind="direct", direct_key=key, created_by=me.id, created_at=now, last_activity_at=now)
+    timer = (await get_settings(session, me.id)).default_disappearing_seconds
+    conversation = Conversation(
+        kind="direct", direct_key=key, created_by=me.id, created_at=now, last_activity_at=now, disappearing_seconds=timer
+    )
     session.add(conversation)
     await session.flush()
     for uid in {me.id, other_id}:
@@ -171,7 +174,13 @@ async def create_group(
         await _require_user(session, uid)
     now = ctx.clock.now()
     conversation = Conversation(
-        kind="group", title=title, description=description, created_by=me.id, created_at=now, last_activity_at=now
+        kind="group",
+        title=title,
+        description=description,
+        created_by=me.id,
+        created_at=now,
+        last_activity_at=now,
+        disappearing_seconds=(await get_settings(session, me.id)).default_disappearing_seconds,
     )
     session.add(conversation)
     await session.flush()
@@ -191,12 +200,17 @@ async def create_group(
     return conversation
 
 
-async def update_group(
+async def update_conversation(
     session: AsyncSession, ctx: Ctx, me: User, conversation: Conversation, changes: dict
 ) -> None:
-    if conversation.kind != "group":
+    """Group info (groups only) and the disappearing-message timer (any chat)."""
+    if conversation.kind != "group" and ({"title", "description"} & changes.keys()):
         raise AppError(400, "not_a_group", "Only groups have a title and description")
     notices = []
+    seconds = changes.get("disappearing_seconds")
+    if seconds is not None and seconds != conversation.disappearing_seconds:
+        conversation.disappearing_seconds = seconds
+        notices.append({"type": "timer_changed", "actor_id": me.id, "seconds": seconds})
     if "title" in changes and changes["title"] and changes["title"] != conversation.title:
         conversation.title = changes["title"]
         notices.append({"type": "title_changed", "actor_id": me.id, "title": conversation.title})

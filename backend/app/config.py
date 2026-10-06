@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     signing_secret: str = "dev-secret-change-me"
     mock_otp: str = "123456"
     seed_on_empty: bool = True
+    sweepers_enabled: bool = True
     ws_idle_timeout_seconds: float = 60
     ws_auth_timeout_seconds: float = 5
 

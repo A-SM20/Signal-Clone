@@ -18,6 +18,7 @@ def make_settings(tmp_path, **overrides) -> Settings:
         database_path=str(tmp_path / "test.db"),
         upload_dir=str(tmp_path / "uploads"),
         seed_on_empty=False,
+        sweepers_enabled=False,
         **overrides,
     )
 

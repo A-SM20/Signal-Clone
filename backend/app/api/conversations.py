@@ -53,9 +53,12 @@ async def get_conversation(conversation_id: int, user: UserDep, session: Session
 async def update_conversation(
     conversation_id: int, body: ConversationPatch, user: UserDep, session: SessionDep, ctx: CtxDep
 ) -> ConversationOut:
-    await admin_of(session, conversation_id, user.id)
-    conversation = await session.get_one(Conversation, conversation_id)
-    await svc.update_group(session, ctx, user, conversation, body.model_dump(exclude_unset=True))
+    conversation = await session.get(Conversation, conversation_id)
+    if conversation is not None and conversation.kind == "group":
+        await admin_of(session, conversation_id, user.id)  # group settings are admin-only
+    else:
+        await member_of(session, conversation_id, user.id, active=True)
+    await svc.update_conversation(session, ctx, user, conversation, body.model_dump(exclude_unset=True))
     return await _view(session, ctx, conversation_id, user.id)
 
 
