@@ -93,4 +93,24 @@ describe("applyEvent", () => {
     expect(qc.getQueryData<ConversationOut[]>(qk.conversations)!.map((c) => c.id)).toEqual([8]);
     expect(useUi.getState().selectedId).toBeNull();
   });
+
+  it("a list refetch that was already in flight can't erase a newer message", async () => {
+    // The refetch started before the message was saved, so its response is stale.
+    let releaseStale!: (v: ConversationOut[]) => void;
+    let calls = 0;
+    const stale = [conv(7), conv(8)];
+    const fresh = [conv(7, { last_message: msg(9), last_activity_at: msg(9).created_at }), conv(8)];
+    const observer = qc.fetchQuery({
+      queryKey: qk.conversations,
+      queryFn: () => (++calls === 1 ? new Promise<ConversationOut[]>((r) => (releaseStale = r)) : Promise.resolve(fresh)),
+      staleTime: 0,
+    });
+    await Promise.resolve();
+    applyEvent(qc, created(msg(9)), ctx(null));
+    releaseStale(stale);
+    await observer.catch(() => {});
+    await new Promise((r) => setTimeout(r, 0));
+    await qc.getQueryCache().find({ queryKey: qk.conversations })?.promise?.catch(() => {});
+    expect(qc.getQueryData<ConversationOut[]>(qk.conversations)!.find((c) => c.id === 7)!.last_message?.id).toBe(9);
+  });
 });

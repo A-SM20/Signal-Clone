@@ -74,7 +74,38 @@ function onMessageCreated(qc: QueryClient, m: MessageOut, ctx: EventContext) {
   );
 }
 
+/**
+ * A fetch that was already in flight when an event arrived may have read the database before the
+ * event's change was saved; when it lands it would overwrite the update we just applied. Restart it
+ * (the old response is discarded) so the cache ends up with data that includes the change.
+ */
+const CACHE_EVENTS = new Set<ServerEvent["type"]>([
+  "message.created",
+  "message.updated",
+  "message.removed",
+  "reaction.updated",
+  "poll.updated",
+  "pin.updated",
+  "receipt.updated",
+  "presence",
+  "conversation.updated",
+  "conversation.removed",
+]);
+
+function refetchIfInFlight(qc: QueryClient, queryKey: readonly unknown[]): void {
+  if (qc.isFetching({ queryKey, exact: true }) > 0) void qc.refetchQueries({ queryKey, exact: true }, { cancelRefetch: true });
+}
+
 export function applyEvent(qc: QueryClient, e: ServerEvent, ctx: EventContext): void {
+  applyToCache(qc, e, ctx);
+  if (!CACHE_EVENTS.has(e.type)) return;
+  refetchIfInFlight(qc, qk.conversations);
+  const conversationId =
+    "conversation_id" in e.data ? (e.data as { conversation_id: number }).conversation_id : "id" in e.data && e.type.startsWith("conversation.") ? (e.data as { id: number }).id : null;
+  if (typeof conversationId === "number") refetchIfInFlight(qc, qk.messages(conversationId));
+}
+
+function applyToCache(qc: QueryClient, e: ServerEvent, ctx: EventContext): void {
   switch (e.type) {
     case "message.created":
       return onMessageCreated(qc, e.data, ctx);
