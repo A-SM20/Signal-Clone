@@ -150,7 +150,12 @@ function deviceIcon(name: string) {
 
 export function LinkedDevicesSection({ linkAction }: { linkAction?: ReactNode }) {
   const qc = useQueryClient();
-  const { data: devices = [] } = useQuery({ queryKey: qk.devices, queryFn: () => apiFetch<DeviceOut[]>("/api/devices") });
+  // A newly linked device exists only once that browser collects its token, so keep the list fresh while open.
+  const { data: devices = [] } = useQuery({
+    queryKey: qk.devices,
+    queryFn: () => apiFetch<DeviceOut[]>("/api/devices"),
+    refetchInterval: 5000,
+  });
   const unlink = async (d: DeviceOut) => {
     try {
       await apiFetch(`/api/devices/${d.id}`, { method: "DELETE" });

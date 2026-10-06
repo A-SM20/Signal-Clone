@@ -159,6 +159,60 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/link-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Link Request
+         * @description Called by the new, signed-out browser. The poll secret proves it is the one that asked.
+         */
+        post: operations["create_link_request_api_link_requests_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/link-requests/{request_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Poll Link Request */
+        get: operations["poll_link_request_api_link_requests__request_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/link-requests/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve Link Request */
+        post: operations["approve_link_request_api_link_requests_approve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/users/lookup": {
         parameters: {
             query?: never;
@@ -708,6 +762,16 @@ export interface components {
             /** User Ids */
             user_ids: number[];
         };
+        /** ApproveIn */
+        ApproveIn: {
+            /** Code */
+            code: string;
+        };
+        /** ApproveOut */
+        ApproveOut: {
+            /** Device Name */
+            device_name: string;
+        };
         /** AttachmentOut */
         AttachmentOut: {
             /** Id */
@@ -924,6 +988,33 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** LinkPollOut */
+        LinkPollOut: {
+            /** Status */
+            status: string;
+            /** Token */
+            token?: string | null;
+            user?: components["schemas"]["MeOut"] | null;
+        };
+        /** LinkRequestIn */
+        LinkRequestIn: {
+            /**
+             * Device Name
+             * @default New device
+             */
+            device_name: string;
+        };
+        /** LinkRequestOut */
+        LinkRequestOut: {
+            /** Id */
+            id: number;
+            /** Code */
+            code: string;
+            /** Poll Secret */
+            poll_secret: string;
+            /** Expires At */
+            expires_at: string;
         };
         /** MeOut */
         MeOut: {
@@ -1692,6 +1783,107 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_link_request_api_link_requests_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkRequestIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkRequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    poll_link_request_api_link_requests__request_id__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-poll-secret"?: string | null;
+            };
+            path: {
+                request_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkPollOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    approve_link_request_api_link_requests_approve_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApproveIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApproveOut"];
+                };
             };
             /** @description Validation Error */
             422: {

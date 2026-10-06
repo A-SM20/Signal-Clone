@@ -14,14 +14,14 @@ import { DemoAccounts, formatPhone } from "./DemoAccounts";
 
 type Step = "phone" | "code" | "profile";
 
-function deviceName(): string {
+export function deviceName(): string {
   const ua = navigator.userAgent;
   const browser = /Edg\//.test(ua) ? "Edge" : /Firefox\//.test(ua) ? "Firefox" : /Chrome\//.test(ua) ? "Chrome" : /Safari\//.test(ua) ? "Safari" : "Browser";
   const os = /Windows/.test(ua) ? "Windows" : /Android/.test(ua) ? "Android" : /iPhone|iPad/.test(ua) ? "iOS" : /Mac OS/.test(ua) ? "macOS" : /Linux/.test(ua) ? "Linux" : "";
   return os ? `${browser} on ${os}` : browser;
 }
 
-function Shell({ title, subtitle, children }: { title: string; subtitle: ReactNode; children: ReactNode }) {
+export function Shell({ title, subtitle, children }: { title: string; subtitle: ReactNode; children: ReactNode }) {
   return (
     <div className="flex min-h-dvh justify-center overflow-y-auto bg-bg px-6 py-10">
       <div className="flex w-full max-w-[400px] flex-col items-center">
@@ -231,6 +231,9 @@ export function OnboardingFlow() {
         </PrimaryButton>
       </form>
       <DemoAccounts busy={busy} onPick={(p) => run(() => verify(p, "123456"))} />
+      <a href="/link/" className="mt-6 text-[14px] font-medium text-primary hover:underline">
+        Link this browser to an existing account
+      </a>
     </Shell>
   );
 }

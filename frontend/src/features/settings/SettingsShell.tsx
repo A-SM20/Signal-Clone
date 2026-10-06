@@ -30,6 +30,7 @@ import {
   ProfileSection,
 } from "./sections";
 import { FolderEditor } from "./FolderEditor";
+import { LinkNewDeviceAction } from "./LinkNewDeviceModal";
 
 const SECTIONS: { id: SettingsSection; label: string; icon: ReactNode }[] = [
   { id: "account", label: "Account", icon: <User size={18} /> },
@@ -68,7 +69,7 @@ export function SettingsDetail({ extras = {} }: { extras?: SettingsExtras }) {
   const body = {
     profile: <ProfileSection me={me} />,
     account: <AccountSection me={me} />,
-    devices: <LinkedDevicesSection linkAction={extras.linkAction} />,
+    devices: <LinkedDevicesSection linkAction={extras.linkAction ?? <LinkNewDeviceAction />} />,
     appearance: <AppearanceSection me={me} />,
     chats: extras.chats ?? <FolderEditor />,
     notifications: <NotificationsSection me={me} />,
