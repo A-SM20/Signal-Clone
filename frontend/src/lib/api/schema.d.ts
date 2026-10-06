@@ -606,6 +606,8 @@ export interface components {
             title?: string | null;
             /** Description */
             description?: string | null;
+            /** Disappearing Seconds */
+            disappearing_seconds?: number | null;
         };
         /** DeviceOut */
         DeviceOut: {

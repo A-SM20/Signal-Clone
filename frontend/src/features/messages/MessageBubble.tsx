@@ -1,5 +1,6 @@
 "use client";
 
+import { Timer } from "lucide-react";
 import { memo, type MouseEvent, type ReactNode } from "react";
 import { Avatar } from "@/components/ui/Avatar";
 import type { ConversationOut, MessageOut, UserOut } from "@/lib/api/types";
@@ -98,6 +99,7 @@ export const MessageBubble = memo(function MessageBubble({
             }`}
           >
             {footerExtra}
+            {message.expires_at && !deleted && <Timer size={11} aria-label="Disappearing message" />}
             <time dateTime={message.created_at} title={new Date(message.created_at).toLocaleString()}>
               {footerTime(message.created_at)}
             </time>

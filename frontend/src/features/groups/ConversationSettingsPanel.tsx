@@ -30,6 +30,7 @@ import { formatPhone } from "@/features/onboarding/DemoAccounts";
 import { toast } from "@/stores/toast";
 import { useUi } from "@/stores/ui";
 import { AddMembersModal } from "./AddMembersModal";
+import { canSetTimer, timerMenuItems } from "../conversation/DisappearingMenu";
 
 export interface SettingsPanelSlots {
   disappearingRow?: ReactNode;
@@ -233,7 +234,16 @@ export function ConversationSettingsPanel({
 
           <Section>
             {slots.disappearingRow ?? (
-              <Row icon={<Timer size={18} />} label="Disappearing messages" detail={timerLabel(c.disappearing_seconds)} onClick={() => toast("Coming soon")} />
+              <Row
+                icon={<Timer size={18} />}
+                label="Disappearing messages"
+                detail={timerLabel(c.disappearing_seconds)}
+                onClick={(e) =>
+                  canSetTimer(c)
+                    ? setMenu({ x: e.clientX, y: e.clientY, items: timerMenuItems(c) })
+                    : toast("Only admins can change the timer")
+                }
+              />
             )}
             <Row
               icon={muted ? <BellOff size={18} /> : <Bell size={18} />}

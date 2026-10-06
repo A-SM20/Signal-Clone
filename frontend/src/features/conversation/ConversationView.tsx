@@ -6,6 +6,7 @@ import { useUi } from "@/stores/ui";
 import { ReplyPreview } from "../messages/QuotedMessage";
 import { ConversationSettingsPanel } from "../groups/ConversationSettingsPanel";
 import { Composer } from "./Composer";
+import { canSetTimer, TimerBadge, timerMenuItems } from "./DisappearingMenu";
 import { ConversationHeader } from "./ConversationHeader";
 import { Timeline } from "./Timeline";
 
@@ -33,7 +34,12 @@ export function ConversationView() {
         window.dispatchEvent(new CustomEvent("signal:drop-files", { detail: Array.from(e.dataTransfer.files) }));
       }}
     >
-      <ConversationHeader conversation={conversation} meId={meId} />
+      <ConversationHeader
+        conversation={conversation}
+        meId={meId}
+        badges={<TimerBadge seconds={conversation.disappearing_seconds} />}
+        menuItems={canSetTimer(conversation) ? timerMenuItems(conversation).map((i) => ({ ...i, label: `Timer: ${i.label}` })) : []}
+      />
       <Timeline conversation={conversation} meId={meId} />
       {left ? (
         <p className="shrink-0 border-t border-divider px-6 py-4 text-center text-[13px] text-fg-2">
