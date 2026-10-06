@@ -10,6 +10,7 @@ from app.config import Settings
 from app.db import create_engine, create_session_factory
 from app.errors import install_error_handlers
 from app.models import Base
+from app.realtime.hub import Hub
 
 
 def create_app(settings: Settings | None = None, clock: Clock | None = None) -> FastAPI:
@@ -31,6 +32,7 @@ def create_app(settings: Settings | None = None, clock: Clock | None = None) -> 
     app = FastAPI(title="Signal Clone API", lifespan=lifespan)
     app.state.settings = settings
     app.state.clock = clock
+    app.state.hub = Hub()
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,

@@ -31,3 +31,8 @@ def app(tmp_path, clock):
 def client(app):
     with TestClient(app) as c:
         yield c
+
+
+@pytest.fixture
+def anyio_backend():
+    return "asyncio"
