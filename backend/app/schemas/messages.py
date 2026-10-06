@@ -2,9 +2,9 @@ from datetime import datetime
 from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, StringConstraints, model_validator
+from pydantic import BaseModel, Field, StringConstraints, model_validator
 
-from app.constants import MAX_BODY_LENGTH
+from app.constants import MAX_ALBUM_SIZE, MAX_BODY_LENGTH
 
 
 class ReplyPreviewOut(BaseModel):
@@ -70,7 +70,7 @@ class MessagePage(BaseModel):
     has_more: bool
 
 
-SUPPORTED_KINDS = {"text"}  # extended as media/voice/poll land
+SUPPORTED_KINDS = {"text", "media"}  # extended as voice/poll land
 
 
 class SendMessageIn(BaseModel):
@@ -78,7 +78,7 @@ class SendMessageIn(BaseModel):
     kind: Literal["text", "media", "voice", "poll"] = "text"
     body: Annotated[str, StringConstraints(max_length=MAX_BODY_LENGTH)] | None = None
     reply_to_id: int | None = None
-    attachment_ids: list[int] = []
+    attachment_ids: Annotated[list[int], Field(max_length=MAX_ALBUM_SIZE)] = []
 
     @model_validator(mode="after")
     def _check(self):
@@ -87,4 +87,8 @@ class SendMessageIn(BaseModel):
         self.body = self.body.strip() if self.body else None
         if self.kind == "text" and not self.body:
             raise ValueError("message body must not be empty")
+        if self.kind == "media" and not self.attachment_ids:
+            raise ValueError("media messages need at least one attachment")
+        if self.kind == "text" and self.attachment_ids:
+            raise ValueError("use kind 'media' to send attachments")
         return self
