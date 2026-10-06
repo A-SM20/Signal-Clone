@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 from typing import Any, Awaitable, Callable, NamedTuple
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -33,3 +34,20 @@ def login(client, phone: str, name: str | None = None) -> Session:
         p = client.patch("/api/me", json={"display_name": name or "Test User"}, headers=headers)
         assert p.status_code == 200, p.text
     return Session(body["token"], body["user"]["id"], headers)
+
+
+@contextmanager
+def ws_session(client, token: str):
+    """Connected + authenticated socket; asserts the server's `ready` frame."""
+    with client.websocket_connect("/api/ws") as ws:
+        ws.send_json({"type": "auth", "token": token})
+        frame = ws.receive_json()
+        assert frame["type"] == "ready", frame
+        yield ws
+
+
+def assert_no_event(ws) -> None:
+    """Proves nothing was queued: the very next frame after a ping must be the pong."""
+    ws.send_json({"type": "ping"})
+    frame = ws.receive_json()
+    assert frame["type"] == "pong", f"unexpected event: {frame}"

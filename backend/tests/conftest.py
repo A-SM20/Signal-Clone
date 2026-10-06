@@ -36,3 +36,10 @@ def client(app):
 @pytest.fixture
 def anyio_backend():
     return "asyncio"
+
+
+@pytest.fixture
+def client_fast_timeouts(tmp_path, clock):
+    app = create_app(make_settings(tmp_path, ws_auth_timeout_seconds=0.2, ws_idle_timeout_seconds=0.3), clock=clock)
+    with TestClient(app) as c:
+        yield c

@@ -1,15 +1,17 @@
+import asyncio
 from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import auth, health, me
+from app.api import auth, devices, health, me
 from app.clock import Clock, SystemClock
 from app.config import Settings
 from app.db import create_engine, create_session_factory
 from app.errors import install_error_handlers
 from app.models import Base
+from app.realtime import ws_router
 from app.realtime.hub import Hub
 
 
@@ -27,12 +29,15 @@ def create_app(settings: Settings | None = None, clock: Clock | None = None) -> 
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
         yield
+        if app.state.background_tasks:  # let detached work (e.g. presence) finish
+            await asyncio.wait(list(app.state.background_tasks), timeout=5)
         await engine.dispose()
 
     app = FastAPI(title="Signal Clone API", lifespan=lifespan)
     app.state.settings = settings
     app.state.clock = clock
     app.state.hub = Hub()
+    app.state.background_tasks = set()
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,
@@ -40,7 +45,7 @@ def create_app(settings: Settings | None = None, clock: Clock | None = None) -> 
         allow_headers=["*"],
     )
     install_error_handlers(app)
-    for router in (health.router, auth.router, me.router):
+    for router in (health.router, auth.router, me.router, devices.router, ws_router.router):
         app.include_router(router, prefix="/api")
     return app
 
