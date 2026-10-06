@@ -4,6 +4,7 @@ from app.models.conversation import Conversation, ConversationMember
 from app.models.device import Device
 from app.models.folder import ChatFolder, ChatFolderConversation
 from app.models.hidden import HiddenMessage
+from app.models.link_request import LinkRequest
 from app.models.message import Message
 from app.models.pin import PinnedMessage
 from app.models.poll import Poll, PollOption, PollVote
@@ -24,6 +25,7 @@ __all__ = [
     "ConversationMember",
     "Device",
     "HiddenMessage",
+    "LinkRequest",
     "IdentityVerification",
     "Message",
     "MessageRevision",
