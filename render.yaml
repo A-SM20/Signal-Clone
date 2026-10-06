@@ -1,0 +1,35 @@
+# Render Blueprint: one free FastAPI web service + one free static site.
+# If either service name is already taken on onrender.com, rename it here and
+# update CORS_ORIGINS / NEXT_PUBLIC_API_URL to match.
+services:
+  - type: web
+    name: signal-clone-asm20-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: SIGNING_SECRET
+        generateValue: true
+      - key: MOCK_OTP
+        value: "123456"
+      - key: SEED_ON_EMPTY
+        value: "true"
+      - key: CORS_ORIGINS
+        value: https://signal-clone-asm20-web.onrender.com,http://localhost:3000
+
+  - type: web
+    name: signal-clone-asm20-web
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./out
+    envVars:
+      - key: NODE_VERSION
+        value: 22.18.0
+      - key: NEXT_PUBLIC_API_URL
+        value: https://signal-clone-asm20-api.onrender.com
