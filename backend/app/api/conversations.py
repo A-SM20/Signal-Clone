@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Response
+from fastapi import APIRouter, Response, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import CtxDep, SessionDep, UserDep, admin_of, member_of
@@ -16,6 +16,7 @@ from app.schemas.conversations import (
     RoleIn,
 )
 from app.services import conversations as svc
+from app.services.files import delete_file, save_avatar
 
 router = APIRouter(prefix="/conversations", tags=["conversations"])
 
@@ -104,4 +105,20 @@ async def change_role(
         raise AppError(404, "not_found", "Not a member")
     conversation = await session.get_one(Conversation, conversation_id)
     await svc.set_role(session, ctx, user, conversation, target, body.role)
+    return await _view(session, ctx, conversation_id, user.id)
+
+
+@router.post("/{conversation_id}/avatar", response_model=ConversationOut)
+async def upload_group_avatar(
+    conversation_id: int, file: UploadFile, user: UserDep, session: SessionDep, ctx: CtxDep
+) -> ConversationOut:
+    await admin_of(session, conversation_id, user.id)
+    conversation = await session.get_one(Conversation, conversation_id)
+    if conversation.kind != "group":
+        raise AppError(400, "not_a_group", "Only groups have their own photo")
+    old = conversation.avatar_path
+    conversation.avatar_path = await save_avatar(ctx, file)
+    await session.commit()
+    delete_file(ctx, old)
+    await svc.publish_conversation(session, ctx, conversation_id, await svc.active_member_ids(session, conversation_id))
     return await _view(session, ctx, conversation_id, user.id)

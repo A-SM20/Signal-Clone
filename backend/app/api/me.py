@@ -1,10 +1,11 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, UploadFile
 from sqlalchemy import select
 
 from app.api.deps import CtxDep, SessionDep, UserDep
 from app.errors import AppError
 from app.models import User
 from app.schemas.users import MeOut, MePatch, SettingsOut, SettingsPatch
+from app.services.files import delete_file, save_avatar
 from app.services.users import get_settings, to_me_out, to_settings_out
 
 router = APIRouter(prefix="/me", tags=["me"])
@@ -29,6 +30,15 @@ async def patch_me(body: MePatch, user: UserDep, session: SessionDep, ctx: CtxDe
             continue
         setattr(user, field, value)
     await session.commit()
+    return to_me_out(user, ctx, await get_settings(session, user.id))
+
+
+@router.post("/avatar", response_model=MeOut)
+async def upload_avatar(file: UploadFile, user: UserDep, session: SessionDep, ctx: CtxDep) -> MeOut:
+    old = user.avatar_path
+    user.avatar_path = await save_avatar(ctx, file)
+    await session.commit()
+    delete_file(ctx, old)
     return to_me_out(user, ctx, await get_settings(session, user.id))
 
 
