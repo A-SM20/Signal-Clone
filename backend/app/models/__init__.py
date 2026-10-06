@@ -2,6 +2,7 @@ from app.models.attachment import Attachment
 from app.models.base import Base
 from app.models.conversation import Conversation, ConversationMember
 from app.models.device import Device
+from app.models.folder import ChatFolder, ChatFolderConversation
 from app.models.hidden import HiddenMessage
 from app.models.message import Message
 from app.models.pin import PinnedMessage
@@ -16,6 +17,8 @@ __all__ = [
     "Attachment",
     "Base",
     "Block",
+    "ChatFolder",
+    "ChatFolderConversation",
     "Contact",
     "Conversation",
     "ConversationMember",

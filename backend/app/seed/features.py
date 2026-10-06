@@ -8,6 +8,8 @@ from sqlalchemy import select
 from app.constants import AVATAR_COLORS
 from app.models import (
     Attachment,
+    ChatFolder,
+    ChatFolderConversation,
     Contact,
     Conversation,
     ConversationMember,
@@ -236,10 +238,23 @@ async def seed_polls(ctx: SeedContext) -> None:
     )
 
 
+async def seed_folders(ctx: SeedContext) -> None:
+    """Alice has an "Unread" preset and a "Work" folder (Project Phoenix + her DM with Daniel)."""
+    alice = ctx.users["alice"]
+    unread = ChatFolder(owner_id=alice.id, name="Unread", position=0, include_direct=True, include_groups=True, unread_only=True)
+    work = ChatFolder(owner_id=alice.id, name="Work", position=1)
+    ctx.session.add_all([unread, work])
+    await ctx.session.flush()
+    ctx.session.add_all(
+        ChatFolderConversation(folder_id=work.id, conversation_id=ctx.convs[key].id) for key in ("phoenix", "alice_daniel")
+    )
+
+
 FEATURE_SEEDERS: list[Callable[[SeedContext], Awaitable[None]]] = [
     seed_core,
     seed_verifications,
     seed_edits,
     seed_pins,
     seed_polls,
+    seed_folders,
 ]

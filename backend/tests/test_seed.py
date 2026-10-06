@@ -144,3 +144,13 @@ def test_seed_poll_in_hike(seeded_client):
     items = seeded_client.get(f"/api/conversations/{hike['id']}/messages", headers=a.headers).json()["items"]
     poll = next(m for m in items if m["kind"] == "poll")["poll"]
     assert poll["question"] == "Saturday trail?" and sum(o["vote_count"] for o in poll["options"]) >= 2
+
+
+def test_seed_folders(seeded_client):
+    a = login(seeded_client, "+15550100001")
+    folders = seeded_client.get("/api/folders", headers=a.headers).json()
+    assert [f["name"] for f in folders] == ["Unread", "Work"]
+    unread, work = folders
+    assert unread["unread_only"] and unread["include_direct"] and unread["include_groups"]
+    titles = {c["id"]: c["title"] for c in seeded_client.get("/api/conversations", headers=a.headers).json()}
+    assert {titles[cid] for cid in work["conversation_ids"]} == {"Project Phoenix", "Daniel Kim"}
