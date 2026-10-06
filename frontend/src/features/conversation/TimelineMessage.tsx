@@ -5,6 +5,7 @@ import type { ConversationOut, MessageOut, UserOut } from "@/lib/api/types";
 import type { Position } from "@/lib/grouping";
 import { retryMessage } from "@/lib/messaging";
 import { deriveStatus } from "@/lib/status";
+import { useTouchGestures } from "@/lib/useTouchGestures";
 import { ActionToolbar, type ActionHandlers, useMessageMenu } from "../messages/MessageActions";
 import { MessageBody } from "../messages/MessageBody";
 import { MessageBubble } from "../messages/MessageBubble";
@@ -45,8 +46,13 @@ export const TimelineMessage = memo(function TimelineMessage({
   const interactive = !pending && !m.deleted_at && conversation.me.left_at === null;
   const menu = useMessageMenu(m, mine, handlers);
   const status = pending ? pending.state : mine ? deriveStatus(m, conversation, meId) : undefined;
+  const touch = useTouchGestures({
+    enabled: interactive,
+    onLongPress: (x, y) => menu.open(x, y),
+    onSwipeRight: () => handlers.onReply(m),
+  });
   return (
-    <>
+    <div {...touch.handlers} style={touch.style}>
       <MessageBubble
         message={m}
         conversation={conversation}
@@ -71,6 +77,6 @@ export const TimelineMessage = memo(function TimelineMessage({
         {extras.body?.(m) ?? <MessageBody message={m} />}
       </MessageBubble>
       {menu.element}
-    </>
+    </div>
   );
 });

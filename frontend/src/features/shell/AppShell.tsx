@@ -16,6 +16,7 @@ import { MobileTabBar } from "./MobileTabBar";
 import { NavRail } from "./NavRail";
 import { ResizableListPane } from "./ResizableListPane";
 import { useSelectionSync } from "./useSelectionSync";
+import { useShortcuts } from "./useShortcuts";
 import { useNotifications } from "@/lib/useNotifications";
 
 export interface ShellSlots {
@@ -49,6 +50,7 @@ export function AppShell(slots: ShellSlots) {
   const unread = useUnreadTotal();
   useSelectionSync();
   useNotifications(unread);
+  const shortcutsGuide = useShortcuts();
 
   const { data: me } = useQuery({
     queryKey: qk.me,
@@ -92,6 +94,7 @@ export function AppShell(slots: ShellSlots) {
         <div className="relative min-h-0 flex-1">{showDetail ? (tab === "settings" ? slots.settingsList : detail) : list}</div>
         {!showDetail && <MobileTabBar unread={unread} />}
         {slots.overlays}
+        {shortcutsGuide}
       </div>
     );
   }
@@ -102,6 +105,7 @@ export function AppShell(slots: ShellSlots) {
       <ResizableListPane resizable={breakpoint === "desktop"}>{list}</ResizableListPane>
       <main className="relative min-w-0 flex-1 border-l border-divider">{detail}</main>
       {slots.overlays}
+      {shortcutsGuide}
     </div>
   );
 }
