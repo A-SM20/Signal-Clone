@@ -246,6 +246,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/users/{user_id}/safety-number": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Safety Number */
+        get: operations["get_safety_number_api_users__user_id__safety_number_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/users/{user_id}/verification": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Verify */
+        post: operations["verify_api_users__user_id__verification_post"];
+        /** Unverify */
+        delete: operations["unverify_api_users__user_id__verification_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/conversations": {
         parameters: {
             query?: never;
@@ -616,6 +651,11 @@ export interface components {
              * Format: date-time
              */
             last_activity_at: string;
+            /**
+             * Safety Number Changed
+             * @default false
+             */
+            safety_number_changed: boolean;
         };
         /** ConversationPatch */
         ConversationPatch: {
@@ -894,6 +934,17 @@ export interface components {
              * @enum {string}
              */
             role: "admin" | "member";
+        };
+        /** SafetyNumberOut */
+        SafetyNumberOut: {
+            /** Digits */
+            digits: string;
+            /** Qr Payload */
+            qr_payload: string;
+            /** Verified */
+            verified: boolean;
+            /** Changed */
+            changed: boolean;
         };
         /** SearchOut */
         SearchOut: {
@@ -1583,6 +1634,105 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_safety_number_api_users__user_id__safety_number_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                user_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SafetyNumberOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    verify_api_users__user_id__verification_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                user_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SafetyNumberOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unverify_api_users__user_id__verification_delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                user_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SafetyNumberOut"];
+                };
             };
             /** @description Validation Error */
             422: {

@@ -1,12 +1,18 @@
 "use client";
 
+import { BadgeCheck } from "lucide-react";
+import { useState } from "react";
 import { useConversation, useMeId } from "@/lib/api/hooks";
+import { otherMember } from "@/lib/conversations";
+import { useSafetyNumber } from "@/lib/safetyNumber";
 import { useReply } from "@/stores/reply";
 import { useUi } from "@/stores/ui";
 import { ReplyPreview } from "../messages/QuotedMessage";
+import { SafetyNumberModal } from "../contacts/SafetyNumberModal";
 import { ConversationSettingsPanel } from "../groups/ConversationSettingsPanel";
 import { Composer } from "./Composer";
 import { RequestBanner } from "./RequestBanner";
+import { SafetyNumberChangedNotice } from "./SafetyNumberChangedNotice";
 import { canSetTimer, TimerBadge, timerMenuItems } from "./DisappearingMenu";
 import { ConversationHeader } from "./ConversationHeader";
 import { Timeline } from "./Timeline";
@@ -18,6 +24,9 @@ export function ConversationView() {
   const meId = useMeId();
   const replyTo = useReply((s) => (selectedId === null ? null : (s.byConversation[selectedId] ?? null)));
   const setReply = useReply((s) => s.set);
+  const other = conversation ? otherMember(conversation, meId) : null;
+  const { data: safety } = useSafetyNumber(other?.id);
+  const [safetyOpen, setSafetyOpen] = useState(false);
 
   if (!conversation) {
     return <div className="flex h-full items-center justify-center text-[13px] text-fg-2">Loading chat…</div>;
@@ -38,10 +47,22 @@ export function ConversationView() {
       <ConversationHeader
         conversation={conversation}
         meId={meId}
-        badges={<TimerBadge seconds={conversation.disappearing_seconds} />}
+        badges={
+          <>
+            {safety?.verified && (
+              <span title="Verified" aria-label="Verified" className="text-fg-2">
+                <BadgeCheck size={15} />
+              </span>
+            )}
+            <TimerBadge seconds={conversation.disappearing_seconds} />
+          </>
+        }
         menuItems={canSetTimer(conversation) ? timerMenuItems(conversation).map((i) => ({ ...i, label: `Timer: ${i.label}` })) : []}
       />
       <Timeline conversation={conversation} meId={meId} />
+      {other && conversation.safety_number_changed && (
+        <SafetyNumberChangedNotice name={other.display_name} onView={() => setSafetyOpen(true)} />
+      )}
       {conversation.me.request_state === "pending" ? (
         <RequestBanner conversation={conversation} />
       ) : left ? (
@@ -68,6 +89,9 @@ export function ConversationView() {
         />
       )}
       {panel === "conversation-settings" && <ConversationSettingsPanel conversation={conversation} meId={meId} />}
+      {safetyOpen && other && (
+        <SafetyNumberModal userId={other.id} name={other.display_name} onClose={() => setSafetyOpen(false)} />
+      )}
     </div>
   );
 }

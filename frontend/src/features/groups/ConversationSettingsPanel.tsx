@@ -29,6 +29,7 @@ import { canEditGroupInfo, canManageMembers, canRemove, isActive } from "@/lib/p
 import { formatPhone } from "@/features/onboarding/DemoAccounts";
 import { toast } from "@/stores/toast";
 import { useUi } from "@/stores/ui";
+import { SafetyNumberModal } from "../contacts/SafetyNumberModal";
 import { AddMembersModal } from "./AddMembersModal";
 import { canSetTimer, timerMenuItems } from "../conversation/DisappearingMenu";
 
@@ -141,7 +142,7 @@ export function ConversationSettingsPanel({
   const qc = useQueryClient();
   const { data: contacts = [] } = useContacts();
   const [menu, setMenu] = useState<{ x: number; y: number; items: MenuItem[] } | null>(null);
-  const [modal, setModal] = useState<null | "add" | "edit" | "leave" | "block">(null);
+  const [modal, setModal] = useState<null | "add" | "edit" | "leave" | "block" | "safety">(null);
   const other = otherMember(c, meId);
   const muted = isMuted(c);
   const active = c.members.filter((m) => m.left_at === null);
@@ -265,7 +266,7 @@ export function ConversationSettingsPanel({
             <Row icon={<Pin size={18} />} label="Pin chat" right={<Switch label="Pin chat" checked={c.me.is_pinned} onChange={(v) => patchMyState(c.id, { is_pinned: v })} />} />
             <Row icon={<Archive size={18} />} label="Archive chat" right={<Switch label="Archive chat" checked={c.me.is_archived} onChange={(v) => patchMyState(c.id, { is_archived: v })} />} />
             {slots.safetyRow ??
-              (other && <Row icon={<ShieldCheck size={18} />} label="View safety number" onClick={() => toast("Coming soon")} />)}
+              (other && <Row icon={<ShieldCheck size={18} />} label="View safety number" onClick={() => setModal("safety")} />)}
             {slots.extraRows}
           </Section>
 
@@ -336,6 +337,9 @@ export function ConversationSettingsPanel({
         >
           <p className="text-[14px] text-fg-2">You will no longer be able to send or receive messages in this group.</p>
         </Modal>
+      )}
+      {modal === "safety" && other && (
+        <SafetyNumberModal userId={other.id} name={other.display_name} onClose={() => setModal(null)} />
       )}
       {modal === "block" && other && (
         <Modal

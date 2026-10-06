@@ -6,7 +6,16 @@ from datetime import timedelta
 from sqlalchemy import select
 
 from app.constants import AVATAR_COLORS
-from app.models import Attachment, Contact, Reaction, Conversation, ConversationMember, User, UserSettings
+from app.models import (
+    Attachment,
+    Contact,
+    Conversation,
+    ConversationMember,
+    IdentityVerification,
+    Reaction,
+    User,
+    UserSettings,
+)
 from app.seed.build import SeedContext
 from app.seed.data import CONTACT_PAIRS, DIRECTS, GROUPS, SCRIPTS, USERS
 from app.seed.media import landscape, pdf_document, store
@@ -158,4 +167,19 @@ async def seed_core(ctx: SeedContext) -> None:
     await _receipts(ctx)
 
 
-FEATURE_SEEDERS: list[Callable[[SeedContext], Awaitable[None]]] = [seed_core]
+async def seed_verifications(ctx: SeedContext) -> None:
+    """Alice verified Bob's current key; her snapshot of Daniel's key is stale, so that chat shows "changed"."""
+    alice, bob, daniel = ctx.users["alice"], ctx.users["bob"], ctx.users["daniel"]
+    ctx.session.add_all(
+        [
+            IdentityVerification(
+                verifier_id=alice.id, subject_id=bob.id, verified_key=bob.identity_key, verified_at=ctx.ago(60 * 24 * 3)
+            ),
+            IdentityVerification(
+                verifier_id=alice.id, subject_id=daniel.id, verified_key=new_identity_key(), verified_at=ctx.ago(60 * 24 * 9)
+            ),
+        ]
+    )
+
+
+FEATURE_SEEDERS: list[Callable[[SeedContext], Awaitable[None]]] = [seed_core, seed_verifications]

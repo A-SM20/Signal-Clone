@@ -106,3 +106,16 @@ def test_seed_has_message_request(seeded_client):
     a = login(seeded_client, "+15550100001")
     jordan = next(c for c in seeded_client.get("/api/conversations", headers=a.headers).json() if c["title"] == "Jordan Blake")
     assert jordan["me"]["request_state"] == "pending" and jordan["unread_count"] == 2
+
+
+def test_seed_verifications(seeded_client):
+    a = login(seeded_client, "+15550100001")
+    people = {c["title"]: c for c in seeded_client.get("/api/conversations", headers=a.headers).json()}
+    bob = next(m for m in people["Bob Martinez"]["members"] if m["user"]["id"] != a.user_id)["user"]["id"]
+    daniel = next(m for m in people["Daniel Kim"]["members"] if m["user"]["id"] != a.user_id)["user"]["id"]
+    sn_bob = seeded_client.get(f"/api/users/{bob}/safety-number", headers=a.headers).json()
+    sn_daniel = seeded_client.get(f"/api/users/{daniel}/safety-number", headers=a.headers).json()
+    assert sn_bob["verified"] is True and sn_bob["changed"] is False
+    assert sn_daniel["verified"] is False and sn_daniel["changed"] is True
+    assert people["Daniel Kim"]["safety_number_changed"] is True
+    assert people["Bob Martinez"]["safety_number_changed"] is False
