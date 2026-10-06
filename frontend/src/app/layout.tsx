@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
+import { InlineScript } from "@/components/app/InlineScript";
 import { ToastViewport } from "@/components/ui/Toast";
 import { THEME_BOOT_SCRIPT } from "@/lib/theme";
 import "./globals.css";
@@ -18,7 +19,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${inter.variable} h-full antialiased`} suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
+        <InlineScript html={THEME_BOOT_SCRIPT} />
       </head>
       <body className="h-full overflow-hidden">
         <Providers>{children}</Providers>

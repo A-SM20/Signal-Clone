@@ -13,6 +13,7 @@ import { useAuth } from "@/stores/auth";
 import { useSocket } from "@/stores/socket";
 import { useUi } from "@/stores/ui";
 import { NewChatPanel } from "../contacts/NewChatPanel";
+import { CreateGroupFlow } from "../groups/CreateGroupFlow";
 import { ConversationRow } from "./ConversationRow";
 import { SearchResults } from "./SearchResults";
 
@@ -73,7 +74,7 @@ export function ChatsPane({ extra }: { extra?: React.ReactNode } = {}) {
   }, []);
 
   if (panel === "new-chat") return <NewChatPanel />;
-  if (panel === "new-group" && extra) return <>{extra}</>;
+  if (panel === "new-group") return <CreateGroupFlow />;
 
   const showArchived = panel === "archived";
   const visible = (conversations ?? []).filter(

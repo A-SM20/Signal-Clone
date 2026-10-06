@@ -2,12 +2,14 @@
 
 import { useConversation, useMeId } from "@/lib/api/hooks";
 import { useUi } from "@/stores/ui";
+import { ConversationSettingsPanel } from "../groups/ConversationSettingsPanel";
 import { Composer } from "./Composer";
 import { ConversationHeader } from "./ConversationHeader";
 import { Timeline } from "./Timeline";
 
 export function ConversationView() {
   const selectedId = useUi((s) => s.selectedId);
+  const panel = useUi((s) => s.panel);
   const conversation = useConversation(selectedId);
   const meId = useMeId();
 
@@ -16,7 +18,7 @@ export function ConversationView() {
   }
   const left = conversation.me.left_at !== null;
   return (
-    <div className="flex h-full flex-col bg-bg">
+    <div className="relative flex h-full flex-col bg-bg">
       <ConversationHeader conversation={conversation} meId={meId} />
       <Timeline conversation={conversation} meId={meId} />
       {left ? (
@@ -26,6 +28,7 @@ export function ConversationView() {
       ) : (
         <Composer conversation={conversation} />
       )}
+      {panel === "conversation-settings" && <ConversationSettingsPanel conversation={conversation} meId={meId} />}
     </div>
   );
 }
