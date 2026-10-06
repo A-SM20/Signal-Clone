@@ -1,3 +1,18 @@
 from app.models.base import Base
+from app.models.conversation import Conversation, ConversationMember
+from app.models.device import Device
+from app.models.message import Message
+from app.models.social import Block, Contact
+from app.models.user import User, UserSettings
 
-__all__ = ["Base"]
+__all__ = [
+    "Base",
+    "Block",
+    "Contact",
+    "Conversation",
+    "ConversationMember",
+    "Device",
+    "Message",
+    "User",
+    "UserSettings",
+]
