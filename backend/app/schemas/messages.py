@@ -1,6 +1,10 @@
 from datetime import datetime
+from typing import Annotated, Literal
+from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, StringConstraints, model_validator
+
+from app.constants import MAX_BODY_LENGTH
 
 
 class ReplyPreviewOut(BaseModel):
@@ -64,3 +68,23 @@ class MessageOut(BaseModel):
 class MessagePage(BaseModel):
     items: list[MessageOut]
     has_more: bool
+
+
+SUPPORTED_KINDS = {"text"}  # extended as media/voice/poll land
+
+
+class SendMessageIn(BaseModel):
+    client_id: UUID
+    kind: Literal["text", "media", "voice", "poll"] = "text"
+    body: Annotated[str, StringConstraints(max_length=MAX_BODY_LENGTH)] | None = None
+    reply_to_id: int | None = None
+    attachment_ids: list[int] = []
+
+    @model_validator(mode="after")
+    def _check(self):
+        if self.kind not in SUPPORTED_KINDS:
+            raise ValueError(f"kind '{self.kind}' is not supported")
+        self.body = self.body.strip() if self.body else None
+        if self.kind == "text" and not self.body:
+            raise ValueError("message body must not be empty")
+        return self
