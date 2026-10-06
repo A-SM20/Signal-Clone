@@ -1,0 +1,17 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+backend/data/
+.pytest_cache/
+# Node
+node_modules/
+.next/
+out/
+frontend/test-results/
+frontend/playwright-report/
+frontend/openapi.json
+# Local reference screenshots (notes in docs/ui-reference.md are committed)
+docs/ui-reference/
+# Executor workspace
+.superpowers/
