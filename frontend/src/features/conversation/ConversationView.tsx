@@ -1,7 +1,9 @@
 "use client";
 
 import { useConversation, useMeId } from "@/lib/api/hooks";
+import { useReply } from "@/stores/reply";
 import { useUi } from "@/stores/ui";
+import { ReplyPreview } from "../messages/QuotedMessage";
 import { ConversationSettingsPanel } from "../groups/ConversationSettingsPanel";
 import { Composer } from "./Composer";
 import { ConversationHeader } from "./ConversationHeader";
@@ -12,6 +14,8 @@ export function ConversationView() {
   const panel = useUi((s) => s.panel);
   const conversation = useConversation(selectedId);
   const meId = useMeId();
+  const replyTo = useReply((s) => (selectedId === null ? null : (s.byConversation[selectedId] ?? null)));
+  const setReply = useReply((s) => s.set);
 
   if (!conversation) {
     return <div className="flex h-full items-center justify-center text-[13px] text-fg-2">Loading chat…</div>;
@@ -36,7 +40,23 @@ export function ConversationView() {
           You are no longer a member of this group.
         </p>
       ) : (
-        <Composer conversation={conversation} />
+        <Composer
+          conversation={conversation}
+          slots={{
+            above: replyTo && (
+              <ReplyPreview message={replyTo} conversation={conversation} meId={meId} onCancel={() => setReply(conversation.id, null)} />
+            ),
+            replyToId: replyTo?.id ?? null,
+            onSent: () => setReply(conversation.id, null),
+            onKeyDownCapture: (e) => {
+              if (e.key === "Escape" && replyTo) {
+                setReply(conversation.id, null);
+                return true;
+              }
+              return false;
+            },
+          }}
+        />
       )}
       {panel === "conversation-settings" && <ConversationSettingsPanel conversation={conversation} meId={meId} />}
     </div>

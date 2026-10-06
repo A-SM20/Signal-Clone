@@ -422,6 +422,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/messages/{message_id}/reaction": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Put Reaction */
+        put: operations["put_reaction_api_messages__message_id__reaction_put"];
+        post?: never;
+        /** Delete Reaction */
+        delete: operations["delete_reaction_api_messages__message_id__reaction_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/search": {
         parameters: {
             query?: never;
@@ -806,12 +824,22 @@ export interface components {
             /** Options */
             options: components["schemas"]["PollOptionOut"][];
         };
+        /** ReactionIn */
+        ReactionIn: {
+            /** Emoji */
+            emoji: string;
+        };
         /** ReactionOut */
         ReactionOut: {
             /** User Id */
             user_id: number;
             /** Emoji */
             emoji: string;
+        };
+        /** ReactionsOut */
+        ReactionsOut: {
+            /** Reactions */
+            reactions: components["schemas"]["ReactionOut"][];
         };
         /** RecipientStatusOut */
         RecipientStatusOut: {
@@ -2005,6 +2033,76 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MessageDetailsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_reaction_api_messages__message_id__reaction_put: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                message_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReactionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReactionsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_reaction_api_messages__message_id__reaction_delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                message_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReactionsOut"];
                 };
             };
             /** @description Validation Error */

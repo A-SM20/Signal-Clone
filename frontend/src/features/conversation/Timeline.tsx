@@ -1,28 +1,24 @@
 "use client";
 
 import { ChevronDown, Lock } from "lucide-react";
-import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Avatar } from "@/components/ui/Avatar";
 import type { ConversationOut, MessageOut } from "@/lib/api/types";
 import { otherMember } from "@/lib/conversations";
 import { groupTimeline } from "@/lib/grouping";
-import { retryMessage } from "@/lib/messaging";
-import { deriveStatus } from "@/lib/status";
 import { formatPhone } from "@/features/onboarding/DemoAccounts";
 import { useReadReceipts } from "@/lib/useReadReceipts";
 import { useTyping } from "@/stores/typing";
-import { MessageBubble } from "../messages/MessageBubble";
+import type { ActionHandlers } from "../messages/MessageActions";
+import { MessageDetailsModal } from "../messages/MessageDetailsModal";
+import { ReactionPicker } from "../messages/reactions";
 import { SystemMessage } from "../messages/SystemMessage";
-import { MessageBody } from "../messages/MessageBody";
 import { TypingDots } from "../chat-list/ConversationRow";
-import { isPending, useTimelineMessages } from "./useMessages";
+import { type BubbleExtras, TimelineMessage } from "./TimelineMessage";
+import { useTimelineMessages } from "./useMessages";
+import { useReply } from "@/stores/reply";
 
-export interface BubbleExtras {
-  body?: (m: MessageOut) => ReactNode;
-  below?: (m: MessageOut) => ReactNode;
-  footer?: (m: MessageOut) => ReactNode;
-  wrap?: (m: MessageOut, bubble: ReactNode) => ReactNode;
-}
+export type { BubbleExtras };
 
 function ConversationHero({ conversation, meId }: { conversation: ConversationOut; meId: number }) {
   const other = otherMember(conversation, meId);
@@ -69,13 +65,37 @@ function TypingBubble({ conversation, meId }: { conversation: ConversationOut; m
  * Newest-at-bottom message list. Uses `flex-col-reverse` so the browser keeps the view
  * anchored to the bottom and preserves position when older pages load above.
  */
-export function Timeline({ conversation, meId, extras = {} }: { conversation: ConversationOut; meId: number; extras?: BubbleExtras }) {
+export function Timeline({
+  conversation,
+  meId,
+  extras = {},
+  extraMenuItems,
+}: {
+  conversation: ConversationOut;
+  meId: number;
+  extras?: BubbleExtras;
+  extraMenuItems?: ActionHandlers["extraItems"];
+}) {
   const { messages, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useTimelineMessages(conversation.id, meId);
   const scroller = useRef<HTMLDivElement>(null);
   const [atBottom, setAtBottom] = useState(true);
   const isGroup = conversation.kind === "group";
   const usersById = useMemo(() => new Map(conversation.members.map((m) => [m.user.id, m.user])), [conversation.members]);
   const items = useMemo(() => groupTimeline(messages, meId, new Date(), isGroup), [messages, meId, isGroup]);
+  const [picker, setPicker] = useState<{ message: MessageOut; anchor: { x: number; y: number } } | null>(null);
+  const [details, setDetails] = useState<MessageOut | null>(null);
+  const handlers = useMemo<ActionHandlers>(
+    () => ({
+      onReply: (m) => {
+        useReply.getState().set(conversation.id, m);
+        window.dispatchEvent(new Event("signal:focus-composer"));
+      },
+      onReact: (m, anchor) => setPicker({ message: m, anchor }),
+      onInfo: (m) => setDetails(m),
+      extraItems: extraMenuItems,
+    }),
+    [conversation.id, extraMenuItems],
+  );
 
   useReadReceipts(conversation, messages, atBottom, meId);
 
@@ -123,30 +143,19 @@ export function Timeline({ conversation, meId, extras = {} }: { conversation: Co
     if (m.kind === "system") {
       return <SystemMessage key={item.key} message={m} conversation={conversation} meId={meId} />;
     }
-    const mine = m.sender_id === meId;
-    const pending = isPending(m) ? m.pending : null;
-    const status = pending ? pending.state : mine ? deriveStatus(m, conversation, meId) : undefined;
-    const bubble = (
-      <MessageBubble
-        message={m}
-        conversation={conversation}
-        sender={m.sender_id ? usersById.get(m.sender_id) : undefined}
-        mine={mine}
-        position={item.position}
-        showAvatar={item.showAvatar}
-        showName={item.showName}
-        status={status}
-        onRetry={pending ? () => retryMessage(pending.client_id) : undefined}
-        isGroup={isGroup}
-        footerExtra={extras.footer?.(m)}
-        below={extras.below?.(m)}
-      >
-        {extras.body?.(m) ?? <MessageBody message={m} />}
-      </MessageBubble>
-    );
     return (
       <div key={item.key} data-message-id={m.id}>
-        {extras.wrap ? extras.wrap(m, bubble) : bubble}
+        <TimelineMessage
+          message={m}
+          position={item.position}
+          showAvatar={item.showAvatar}
+          showName={item.showName}
+          conversation={conversation}
+          sender={m.sender_id ? usersById.get(m.sender_id) : undefined}
+          meId={meId}
+          handlers={handlers}
+          extras={extras}
+        />
       </div>
     );
   });
@@ -161,6 +170,15 @@ export function Timeline({ conversation, meId, extras = {} }: { conversation: Co
           <TypingBubble conversation={conversation} meId={meId} />
         </div>
       </div>
+      {picker && (
+        <ReactionPicker
+          anchor={picker.anchor}
+          message={messages.find((x) => x.id === picker.message.id) ?? picker.message}
+          meId={meId}
+          onClose={() => setPicker(null)}
+        />
+      )}
+      {details && <MessageDetailsModal message={details} onClose={() => setDetails(null)} />}
       {!atBottom && (
         <button
           aria-label="Scroll to bottom"

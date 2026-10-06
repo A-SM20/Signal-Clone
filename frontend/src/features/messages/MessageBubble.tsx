@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, type ReactNode } from "react";
+import { memo, type MouseEvent, type ReactNode } from "react";
 import { Avatar } from "@/components/ui/Avatar";
 import type { ConversationOut, MessageOut, UserOut } from "@/lib/api/types";
 import type { Position } from "@/lib/grouping";
@@ -37,6 +37,9 @@ interface BubbleProps {
   children?: ReactNode;
   footerExtra?: ReactNode;
   below?: ReactNode;
+  above?: ReactNode;
+  toolbar?: ReactNode;
+  onContextMenu?: (e: MouseEvent) => void;
   isGroup: boolean;
 }
 
@@ -52,13 +55,20 @@ export const MessageBubble = memo(function MessageBubble({
   children,
   footerExtra,
   below,
+  above,
+  toolbar,
+  onContextMenu,
   isGroup,
 }: BubbleProps) {
   const deleted = !!message.deleted_at;
   const outgoing = mine && !deleted;
   const spacing = position === "single" || position === "first" ? "mt-2" : "mt-0.5";
   return (
-    <div className={`group/msg flex items-end gap-2 px-4 ${spacing} ${mine ? "justify-end" : "justify-start"}`}>
+    <div
+      className={`group/msg flex items-end gap-2 px-4 ${spacing} ${mine ? "justify-end" : "justify-start"}`}
+      onContextMenu={onContextMenu}
+    >
+      {mine && toolbar}
       {isGroup && !mine && (
         <span className="w-7 shrink-0">
           {showAvatar && sender && <Avatar name={sender.display_name} color={sender.avatar_color} url={sender.avatar_url} size="sm" />}
@@ -80,6 +90,7 @@ export const MessageBubble = memo(function MessageBubble({
               {sender.display_name}
             </div>
           )}
+          {above}
           {children}
           <span
             className={`float-right mt-1.5 ml-3 inline-flex translate-y-[3px] items-center gap-1 text-[11px] leading-none ${
@@ -102,6 +113,7 @@ export const MessageBubble = memo(function MessageBubble({
           </button>
         )}
       </div>
+      {!mine && toolbar}
     </div>
   );
 });
