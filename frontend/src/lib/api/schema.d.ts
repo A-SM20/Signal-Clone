@@ -527,6 +527,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/messages/{message_id}/pin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Pin Message */
+        post: operations["pin_message_api_messages__message_id__pin_post"];
+        /** Unpin Message */
+        delete: operations["unpin_message_api_messages__message_id__pin_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/search": {
         parameters: {
             query?: never;
@@ -691,6 +709,11 @@ export interface components {
              * @default false
              */
             safety_number_changed: boolean;
+            /**
+             * Pins
+             * @default []
+             */
+            pins: components["schemas"]["PinOut"][];
         };
         /** ConversationPatch */
         ConversationPatch: {
@@ -700,6 +723,8 @@ export interface components {
             description?: string | null;
             /** Disappearing Seconds */
             disappearing_seconds?: number | null;
+            /** Pin Permission */
+            pin_permission?: ("all" | "admins") | null;
         };
         /** DeviceOut */
         DeviceOut: {
@@ -891,6 +916,14 @@ export interface components {
             /** Is Pinned */
             is_pinned?: boolean | null;
         };
+        /** OkOut */
+        OkOut: {
+            /**
+             * Ok
+             * @default true
+             */
+            ok: boolean;
+        };
         /** OtpRequestIn */
         OtpRequestIn: {
             /** Phone */
@@ -900,6 +933,30 @@ export interface components {
         OtpRequestOut: {
             /** Is New User */
             is_new_user: boolean;
+        };
+        /** PinIn */
+        PinIn: {
+            /**
+             * Duration
+             * @default forever
+             * @enum {string}
+             */
+            duration: "24h" | "7d" | "30d" | "forever";
+        };
+        /** PinOut */
+        PinOut: {
+            /** Message Id */
+            message_id: number;
+            /** Pinned By */
+            pinned_by: number | null;
+            /**
+             * Pinned At
+             * Format: date-time
+             */
+            pinned_at: string;
+            /** Expires At */
+            expires_at: string | null;
+            message: components["schemas"]["MessageOut"];
         };
         /** PollOptionOut */
         PollOptionOut: {
@@ -2477,6 +2534,76 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RevisionOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pin_message_api_messages__message_id__pin_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                message_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PinIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OkOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unpin_message_api_messages__message_id__pin_delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                message_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OkOut"];
                 };
             };
             /** @description Validation Error */

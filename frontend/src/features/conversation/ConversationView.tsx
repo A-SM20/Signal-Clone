@@ -1,16 +1,19 @@
 "use client";
 
 import { BadgeCheck } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useConversation, useMeId } from "@/lib/api/hooks";
+import type { MessageOut } from "@/lib/api/types";
 import { otherMember } from "@/lib/conversations";
 import { useSafetyNumber } from "@/lib/safetyNumber";
 import { useReply } from "@/stores/reply";
 import { useUi } from "@/stores/ui";
 import { ReplyPreview } from "../messages/QuotedMessage";
 import { SafetyNumberModal } from "../contacts/SafetyNumberModal";
+import { PinDurationModal, pinMenuItems } from "../messages/PinMenu";
 import { ConversationSettingsPanel } from "../groups/ConversationSettingsPanel";
 import { Composer } from "./Composer";
+import { PinnedBar } from "./PinnedBar";
 import { RequestBanner } from "./RequestBanner";
 import { SafetyNumberChangedNotice } from "./SafetyNumberChangedNotice";
 import { canSetTimer, TimerBadge, timerMenuItems } from "./DisappearingMenu";
@@ -27,6 +30,14 @@ export function ConversationView() {
   const other = conversation ? otherMember(conversation, meId) : null;
   const { data: safety } = useSafetyNumber(other?.id);
   const [safetyOpen, setSafetyOpen] = useState(false);
+  const [pinning, setPinning] = useState<MessageOut | null>(null);
+  // Read the latest chat at menu-open time so the callback (and every memoised bubble) stays stable.
+  const latest = useRef(conversation);
+  latest.current = conversation;
+  const pinItems = useCallback(
+    (m: MessageOut) => (latest.current ? pinMenuItems(latest.current, m, setPinning) : []),
+    [],
+  );
 
   if (!conversation) {
     return <div className="flex h-full items-center justify-center text-[13px] text-fg-2">Loading chat…</div>;
@@ -59,7 +70,8 @@ export function ConversationView() {
         }
         menuItems={canSetTimer(conversation) ? timerMenuItems(conversation).map((i) => ({ ...i, label: `Timer: ${i.label}` })) : []}
       />
-      <Timeline conversation={conversation} meId={meId} />
+      <PinnedBar conversation={conversation} meId={meId} />
+      <Timeline conversation={conversation} meId={meId} extraMenuItems={pinItems} />
       {other && conversation.safety_number_changed && (
         <SafetyNumberChangedNotice name={other.display_name} onView={() => setSafetyOpen(true)} />
       )}
@@ -89,6 +101,9 @@ export function ConversationView() {
         />
       )}
       {panel === "conversation-settings" && <ConversationSettingsPanel conversation={conversation} meId={meId} />}
+      {pinning && (
+        <PinDurationModal message={pinning} full={(conversation.pins ?? []).length >= 3} onClose={() => setPinning(null)} />
+      )}
       {safetyOpen && other && (
         <SafetyNumberModal userId={other.id} name={other.display_name} onClose={() => setSafetyOpen(false)} />
       )}

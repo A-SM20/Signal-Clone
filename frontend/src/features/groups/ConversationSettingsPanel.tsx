@@ -265,6 +265,26 @@ export function ConversationSettingsPanel({
             />
             <Row icon={<Pin size={18} />} label="Pin chat" right={<Switch label="Pin chat" checked={c.me.is_pinned} onChange={(v) => patchMyState(c.id, { is_pinned: v })} />} />
             <Row icon={<Archive size={18} />} label="Archive chat" right={<Switch label="Archive chat" checked={c.me.is_archived} onChange={(v) => patchMyState(c.id, { is_archived: v })} />} />
+            {c.kind === "group" && canEditGroupInfo(c) && (
+              <Row
+                icon={<Pin size={18} />}
+                label="Who can pin messages"
+                detail={c.pin_permission === "admins" ? "Only admins" : "All members"}
+                onClick={(e) =>
+                  setMenu({
+                    x: e.clientX,
+                    y: e.clientY,
+                    items: (["all", "admins"] as const).map((value) => ({
+                      label: value === "admins" ? "Only admins" : "All members",
+                      onSelect: () =>
+                        void apiFetch<ConversationOut>(`/api/conversations/${c.id}`, { method: "PATCH", json: { pin_permission: value } })
+                          .then(upsertConversation)
+                          .catch((err) => toast(err instanceof ApiError ? err.message : "Couldn't update")),
+                    })),
+                  })
+                }
+              />
+            )}
             {slots.safetyRow ??
               (other && <Row icon={<ShieldCheck size={18} />} label="View safety number" onClick={() => setModal("safety")} />)}
             {slots.extraRows}
