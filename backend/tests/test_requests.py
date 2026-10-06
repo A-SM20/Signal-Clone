@@ -157,3 +157,28 @@ def test_request_action_only_when_pending(client):
     conv = _dm(client, jordan, alice)
     r = client.post(f"/api/conversations/{conv}/request", json={"action": "accept"}, headers=alice.headers)
     assert r.status_code == 400 and r.json()["error"]["code"] == "not_a_request"
+
+
+def test_recipient_can_reopen_chat_after_deleting_request(client):
+    alice, jordan = _users(client)
+    conv = _dm(client, jordan, alice)
+    _send(client, jordan, conv, "hello?")
+    client.post(f"/api/conversations/{conv}/request", json={"action": "delete"}, headers=alice.headers)
+    r = client.post("/api/conversations/direct", json={"user_id": jordan.user_id}, headers=alice.headers)
+    assert r.status_code in (200, 201), r.text
+    assert r.json()["id"] == conv and r.json()["me"]["request_state"] == "accepted"
+    _send(client, alice, conv, "sorry, who is this?")
+
+
+def test_sender_is_not_told_when_request_is_deleted_or_blocked(client):
+    for action in ("delete", "block"):
+        alice = login(client, "+15550100001", "Alice")
+        jordan = login(client, f"+1555010010{1 if action == 'delete' else 2}", "Jordan")
+        conv = _dm(client, jordan, alice)
+        _send(client, jordan, conv)
+        before = _view(client, jordan, conv).json()
+        client.post(f"/api/conversations/{conv}/request", json={"action": action}, headers=alice.headers)
+        after = _view(client, jordan, conv).json()
+        assert after["is_note_to_self"] is False and after["title"] == "Alice"
+        assert [m["user"]["id"] for m in after["members"]] == [m["user"]["id"] for m in before["members"]]
+        assert [m["request_state"] for m in after["members"]] == [m["request_state"] for m in before["members"]]

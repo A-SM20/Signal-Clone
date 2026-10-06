@@ -6,9 +6,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.constants import DELETE_FOR_EVERYONE_WINDOW, EDIT_WINDOW
 from app.context import Ctx
 from app.errors import AppError
-from app.models import Block, HiddenMessage, Message, MessageRevision, Reaction, User
+from app.models import HiddenMessage, Message, MessageRevision, Reaction, User
 from app.realtime import events
 from app.schemas.messages import MessageOut, RevisionOut
+from app.repositories.messages import visible_ids
 from app.services.attachments import purge_for_messages
 from app.services.conversations import active_member_ids
 from app.services import pins, polls
@@ -20,8 +21,8 @@ EDITABLE_KINDS = {"text"}
 async def _publish_update(session: AsyncSession, ctx: Ctx, message: Message) -> MessageOut:
     out = await message_out(session, ctx, message, viewer_id=0)
     recipients = set(await active_member_ids(session, message.conversation_id))
-    if message.sender_id is not None:  # silent blocking, as for new messages
-        recipients -= set(await session.scalars(select(Block.blocker_id).where(Block.blocked_id == message.sender_id)))
+    # Only people who can see this message right now: not blocked, not hidden by them, inside their window.
+    recipients = {uid for uid in recipients if message.id in await visible_ids(session, uid, [message.id])}
     await ctx.hub.send_to_users(recipients, events.message_updated(out))
     return out
 

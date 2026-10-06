@@ -45,7 +45,7 @@ class ConversationMember(Base):
         ForeignKey("users.id", ondelete="CASCADE"), primary_key=True, index=True
     )
     role: Mapped[str] = mapped_column(String(8), default="member")  # admin | member
-    request_state: Mapped[str] = mapped_column(String(10), default="accepted")  # accepted | pending
+    request_state: Mapped[str] = mapped_column(String(10), default="accepted")  # accepted | pending | deleted
     joined_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
     left_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
     last_delivered_message_id: Mapped[int] = mapped_column(Integer, default=0)

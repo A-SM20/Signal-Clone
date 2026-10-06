@@ -1,3 +1,5 @@
+import time
+
 import pytest
 from sqlalchemy import select
 from starlette.websockets import WebSocketDisconnect
@@ -58,6 +60,10 @@ def test_idle_socket_dropped(client_fast_timeouts):
     with ws_session(c, a.token) as ws:
         with pytest.raises(WebSocketDisconnect):
             ws.receive_json()
+    # The server unregisters just after closing the socket; give it a moment on slow CI runners.
+    deadline = time.monotonic() + 2
+    while c.app.state.hub.is_online(a.user_id) and time.monotonic() < deadline:
+        time.sleep(0.02)
     assert c.app.state.hub.is_online(a.user_id) is False
 
 
@@ -114,3 +120,13 @@ def test_share_last_seen_false_hides_presence(client):
         with ws_session(client, a.token):
             frame = bob_ws.receive_json()
             assert frame["data"]["online"] is False and frame["data"]["last_seen_at"] is None
+
+
+def test_logout_closes_open_sockets_of_that_device(client):
+    a = login(client, "+15550100001", "Alice")
+    with ws_session(client, a.token) as ws:
+        client.post("/api/auth/logout", headers=a.headers)
+        with pytest.raises(WebSocketDisconnect) as exc:
+            while True:  # skip anything queued before the close (e.g. presence)
+                ws.receive_json()
+    assert exc.value.code == 4403

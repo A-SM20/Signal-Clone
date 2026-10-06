@@ -50,7 +50,7 @@ async def member_of(session: AsyncSession, conversation_id: int, user_id: int, *
     from app.repositories.conversations import membership
 
     member = await membership(session, conversation_id, user_id)
-    if member is None:
+    if member is None or member.request_state == "deleted":
         raise AppError(404, "not_found", "Conversation not found")
     if active and member.left_at is not None:
         raise AppError(403, "not_active_member", "You are no longer a member of this group")

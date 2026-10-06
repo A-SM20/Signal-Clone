@@ -9,6 +9,7 @@ from app.errors import AppError
 from app.models import Message, User
 from app.schemas.messages import EditMessageIn, MessageOut, MessagePage, ReactionOut, RevisionOut, SendMessageIn
 from app.schemas.users import UserOut
+from app.repositories import messages as message_repo
 from app.services import edits, pins
 from app.services import messages as svc
 from app.services import reactions as reaction_svc
@@ -71,11 +72,14 @@ async def get_message_details(message_id: int, user: UserDep, session: SessionDe
 
 
 async def _visible_message(session, message_id: int, user_id: int, *, active: bool) -> Message:
-    """Loads a message the caller may see; non-members get 404."""
+    """Loads a message the caller may see. Non-members — and members asking about a message outside
+    their join/leave window, from someone they blocked, or that they hid — get 404."""
     message = await session.get(Message, message_id)
     if message is None:
         raise AppError(404, "not_found", "Message not found")
     await member_of(session, message.conversation_id, user_id, active=active)
+    if message_id not in await message_repo.visible_ids(session, user_id, [message_id]):
+        raise AppError(404, "not_found", "Message not found")
     return message
 
 

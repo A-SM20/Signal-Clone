@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Response
 
 from app.api.deps import CtxDep, DeviceDep, SessionDep
+from app.realtime.ws_router import CLOSE_REVOKED
 from app.schemas.auth import AuthOut, OtpRequestIn, OtpRequestOut, VerifyOtpIn
 from app.services import auth as auth_service
 from app.services.users import get_settings, to_me_out
@@ -25,4 +26,6 @@ async def verify_otp(body: VerifyOtpIn, session: SessionDep, ctx: CtxDep) -> Aut
 async def logout(session: SessionDep, ctx: CtxDep, device: DeviceDep) -> Response:
     device.revoked_at = ctx.clock.now()
     await session.commit()
+    # Other tabs share this device token: end their live sockets too, as unlinking does.
+    await ctx.hub.close_device(device.id, CLOSE_REVOKED)
     return Response(status_code=204)

@@ -14,6 +14,19 @@ async def by_client_id(session: AsyncSession, sender_id: int, client_id: str) ->
     return await session.scalar(select(Message).where(Message.sender_id == sender_id, Message.client_id == client_id))
 
 
+async def visible_ids(session: AsyncSession, viewer_id: int, message_ids: list[int]) -> set[int]:
+    """The subset the viewer may see: inside their join/leave window, not from someone they blocked, not hidden."""
+    if not message_ids:
+        return set()
+    me = ConversationMember
+    rows = await session.scalars(
+        select(Message.id)
+        .join(me, (me.conversation_id == Message.conversation_id) & (me.user_id == viewer_id))
+        .where(Message.id.in_(message_ids), visible_to(me), not_blocked_by(viewer_id), not_hidden_for(viewer_id))
+    )
+    return set(rows)
+
+
 async def page(
     session: AsyncSession, member: ConversationMember, before: int | None, limit: int
 ) -> tuple[list[Message], bool]:

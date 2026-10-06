@@ -1,6 +1,6 @@
 import uuid
 
-from tests.helpers import befriend, login, ws_session
+from tests.helpers import assert_no_event, befriend, login, ws_session
 
 
 def _setup(client):
@@ -123,3 +123,12 @@ def test_cannot_edit_deleted(client):
     client.delete(f"/api/messages/{msg['id']}?scope=everyone", headers=a.headers)
     r = client.patch(f"/api/messages/{msg['id']}", json={"body": "again"}, headers=a.headers)
     assert r.status_code == 400 and r.json()["error"]["code"] == "message_deleted"
+
+
+def test_edit_not_pushed_to_someone_who_deleted_it_for_themselves(client):
+    a, b, conv = _setup(client)
+    msg = _send(client, a, conv, "typo")
+    client.delete(f"/api/messages/{msg['id']}?scope=me", headers=b.headers)
+    with ws_session(client, b.token) as bob_ws:
+        client.patch(f"/api/messages/{msg['id']}", json={"body": "fixed"}, headers=a.headers)
+        assert_no_event(bob_ws)

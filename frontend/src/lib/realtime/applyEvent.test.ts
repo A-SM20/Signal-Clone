@@ -113,4 +113,10 @@ describe("applyEvent", () => {
     await qc.getQueryCache().find({ queryKey: qk.conversations })?.promise?.catch(() => {});
     expect(qc.getQueryData<ConversationOut[]>(qk.conversations)!.find((c) => c.id === 7)!.last_message?.id).toBe(9);
   });
+
+  it("an update for a message that isn't loaded (older page, or deleted for me) is never inserted", () => {
+    applyEvent(qc, { type: "message.updated", data: msg(1, { body: "edited" }), ts: "" }, ctx(7));
+    applyEvent(qc, { type: "message.updated", data: msg(99, { body: "not here" }), ts: "" }, ctx(7));
+    expect(pages(qc).map((m) => [m.id, m.body])).toEqual([[2, "m2"], [1, "edited"]]);
+  });
 });

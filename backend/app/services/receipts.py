@@ -24,7 +24,7 @@ def visible_cursors(
     """
     if member.user_id == viewer_id:
         return member.last_delivered_message_id, member.last_read_message_id
-    if member.request_state == "pending":  # an unaccepted request leaks nothing
+    if member.request_state in ("pending", "deleted"):  # an unaccepted request leaks nothing
         return None, None
     reads_shared = (viewer_settings is None or viewer_settings.read_receipts) and (
         member_settings is None or member_settings.read_receipts
@@ -79,7 +79,7 @@ async def _broadcast_receipt(session: AsyncSession, ctx: Ctx, member: Conversati
 
 async def relay_typing(session: AsyncSession, ctx: Ctx, user_id: int, conversation_id: int, state: str) -> None:
     member = await membership(session, conversation_id, user_id)
-    if member is None or member.left_at is not None or member.request_state == "pending":
+    if member is None or member.left_at is not None or member.request_state in ("pending", "deleted"):
         return
     others = list(
         await session.scalars(

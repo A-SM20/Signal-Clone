@@ -10,6 +10,7 @@ from app.constants import MAX_PINS
 from app.context import Ctx
 from app.errors import AppError
 from app.models import Conversation, ConversationMember, Message, PinnedMessage
+from app.repositories.messages import visible_ids
 from app.realtime import events
 from app.schemas.conversations import PinOut
 from app.services.message_views import message_out_many
@@ -22,8 +23,11 @@ DURATIONS: dict[str, timedelta | None] = {
 }
 
 
-async def pins_for(session: AsyncSession, ctx: Ctx, conversation_ids: list[int]) -> dict[int, list[PinOut]]:
-    """Current pins per chat, newest first (the pinned bar starts with the latest)."""
+async def pins_for(
+    session: AsyncSession, ctx: Ctx, conversation_ids: list[int], viewer_id: int
+) -> dict[int, list[PinOut]]:
+    """Current pins per chat that `viewer_id` may see, newest first (the pinned bar starts with the latest).
+    A pin is hidden if its message is outside the viewer's window, or it was pinned after they left."""
     if not conversation_ids:
         return {}
     rows = list(
@@ -33,6 +37,21 @@ async def pins_for(session: AsyncSession, ctx: Ctx, conversation_ids: list[int])
             .order_by(PinnedMessage.pinned_at.desc(), PinnedMessage.message_id.desc())
         )
     )
+    if not rows:
+        return {}
+    allowed = await visible_ids(session, viewer_id, [p.message_id for p in rows])
+    left = {
+        m.conversation_id: m.left_at
+        for m in await session.scalars(
+            select(ConversationMember).where(
+                ConversationMember.user_id == viewer_id, ConversationMember.conversation_id.in_(conversation_ids)
+            )
+        )
+    }
+    rows = [
+        p for p in rows
+        if p.message_id in allowed and (left.get(p.conversation_id) is None or p.pinned_at <= left[p.conversation_id])
+    ]
     if not rows:
         return {}
     messages = list(await session.scalars(select(Message).where(Message.id.in_([p.message_id for p in rows]))))
@@ -54,10 +73,9 @@ async def pins_for(session: AsyncSession, ctx: Ctx, conversation_ids: list[int])
 async def publish_pins(session: AsyncSession, ctx: Ctx, conversation_id: int) -> None:
     from app.services.conversations import active_member_ids  # conversations imports this module
 
-    pins = (await pins_for(session, ctx, [conversation_id])).get(conversation_id, [])
-    await ctx.hub.send_to_users(
-        await active_member_ids(session, conversation_id), events.pin_updated(conversation_id, pins)
-    )
+    for uid in await active_member_ids(session, conversation_id):  # each member sees only pins in their window
+        pins = (await pins_for(session, ctx, [conversation_id], uid)).get(conversation_id, [])
+        await ctx.hub.send_to_users([uid], events.pin_updated(conversation_id, pins))
 
 
 async def _check_permission(session: AsyncSession, member: ConversationMember) -> None:

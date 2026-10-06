@@ -13,11 +13,16 @@ from app.services import attachments, polls, requests
 from app.services.message_views import message_out, message_out_many
 
 
-async def _validate_reply(session: AsyncSession, conversation_id: int, reply_to_id: int | None) -> None:
+async def _validate_reply(session: AsyncSession, conversation_id: int, reply_to_id: int | None, sender_id: int) -> None:
     if reply_to_id is None:
         return
     original = await session.get(Message, reply_to_id)
-    if original is None or original.conversation_id != conversation_id or original.kind == "system":
+    if (
+        original is None
+        or original.conversation_id != conversation_id
+        or original.kind == "system"
+        or reply_to_id not in await repo.visible_ids(session, sender_id, [reply_to_id])
+    ):
         raise AppError(400, "invalid_reply", "You can only reply to a message in this chat")
 
 
@@ -32,7 +37,7 @@ async def send_message(
 
     if member.request_state == "pending":
         raise AppError(403, "request_pending", "Accept the message request before replying")
-    await _validate_reply(session, member.conversation_id, data.reply_to_id)
+    await _validate_reply(session, member.conversation_id, data.reply_to_id, sender.id)
     conversation = await session.get_one(Conversation, member.conversation_id)
     if conversation.kind == "direct":
         await requests.restore_direct_recipient(session, ctx, conversation, sender.id)

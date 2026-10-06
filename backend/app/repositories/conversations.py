@@ -35,7 +35,7 @@ async def conversations_for(session: AsyncSession, user_id: int) -> list[Convers
     rows = await session.scalars(
         select(Conversation)
         .join(ConversationMember, ConversationMember.conversation_id == Conversation.id)
-        .where(ConversationMember.user_id == user_id)
+        .where(ConversationMember.user_id == user_id, ConversationMember.request_state != "deleted")
     )
     return list(rows)
 

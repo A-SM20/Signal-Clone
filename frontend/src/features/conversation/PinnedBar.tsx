@@ -6,7 +6,13 @@ import type { ConversationOut } from "@/lib/api/types";
 import { memberName, messageSummary } from "@/lib/conversations";
 import { ApiError } from "@/lib/api/client";
 import { canPin, nextPinIndex, unpinMessage } from "@/lib/pins";
+import { useSignedMedia } from "@/lib/useSignedMedia";
 import { toast } from "@/stores/toast";
+
+function PinThumb({ url }: { url: string }) {
+  const { src, onError } = useSignedMedia(url);
+  return <img src={src} onError={onError} alt="" className="h-8 w-8 shrink-0 rounded object-cover" />;
+}
 
 /** Bar under the chat header: shows one pin at a time; clicking jumps to it and moves to the next. */
 export function PinnedBar({ conversation: c, meId }: { conversation: ConversationOut; meId: number }) {
@@ -27,7 +33,7 @@ export function PinnedBar({ conversation: c, meId }: { conversation: Conversatio
         aria-label="Go to pinned message"
       >
         <Pin size={16} className="shrink-0 text-fg-2" aria-hidden />
-        {thumb && <img src={thumb.url} alt="" className="h-8 w-8 shrink-0 rounded object-cover" />}
+        {thumb && <PinThumb url={thumb.url} />}
         <span className="min-w-0">
           <span className="block text-[12px] font-semibold">
             Pinned message{pins.length > 1 ? ` · ${i + 1} of ${pins.length}` : ""}

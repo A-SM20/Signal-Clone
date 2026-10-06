@@ -102,3 +102,41 @@ def test_delete_for_everyone_unpins(client):
     _pin(client, a, msg["id"])
     client.delete(f"/api/messages/{msg['id']}?scope=everyone", headers=a.headers)
     assert _pins(client, a, conv) == []
+
+
+def _group_with_late_joiner(client, clock):
+    a = login(client, "+15550100001", "Alice")
+    b = login(client, "+15550100002", "Bob")
+    c = login(client, "+15550100003", "Carol")
+    befriend(client, a, b, c)
+    g = client.post("/api/conversations/groups", json={"title": "G", "member_ids": [b.user_id]}, headers=a.headers).json()["id"]
+    old = _send(client, a, g, "before carol")
+    clock.advance(seconds=5)
+    client.post(f"/api/conversations/{g}/members", json={"user_ids": [c.user_id]}, headers=a.headers)
+    clock.advance(seconds=5)
+    return a, b, c, g, old
+
+
+def test_late_joiner_cannot_reach_messages_from_before_joining(client, clock):
+    a, b, c, g, old = _group_with_late_joiner(client, clock)
+    assert _pin(client, c, old["id"]).status_code == 404
+    assert client.put(f"/api/messages/{old['id']}/reaction", json={"emoji": "👍"}, headers=c.headers).status_code == 404
+    assert client.get(f"/api/messages/{old['id']}/revisions", headers=c.headers).status_code == 404
+    r = client.post(
+        f"/api/conversations/{g}/messages",
+        json={"client_id": str(uuid.uuid4()), "kind": "text", "body": "re", "reply_to_id": old["id"]},
+        headers=c.headers,
+    )
+    assert r.status_code == 400 and r.json()["error"]["code"] == "invalid_reply"
+
+
+def test_pins_respect_each_viewers_window(client, clock):
+    a, b, c, g, old = _group_with_late_joiner(client, clock)
+    _pin(client, a, old["id"])
+    assert _pins(client, c, g) == []  # Carol joined after the message was sent
+    assert [p["message_id"] for p in _pins(client, b, g)] == [old["id"]]
+    client.delete(f"/api/conversations/{g}/members/{b.user_id}", headers=a.headers)
+    clock.advance(seconds=5)
+    later = _send(client, a, g, "after bob left")
+    _pin(client, a, later["id"])
+    assert [p["message_id"] for p in _pins(client, b, g)] == [old["id"]]  # nothing from after Bob left

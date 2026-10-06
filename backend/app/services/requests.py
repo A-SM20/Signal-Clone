@@ -16,13 +16,17 @@ async def restore_direct_recipient(session: AsyncSession, ctx: Ctx, conversation
     other = b if a == sender_id else a
     if other == sender_id:
         return
-    if await session.get(ConversationMember, (conversation.id, other)) is not None:
+    row = await session.get(ConversationMember, (conversation.id, other))
+    if row is not None and row.request_state != "deleted":
         return
     if await is_blocked(session, other, sender_id):
         return
-    session.add(
-        ConversationMember(conversation_id=conversation.id, user_id=other, joined_at=ctx.clock.now(), request_state="pending")
-    )
+    if row is None:
+        session.add(
+            ConversationMember(conversation_id=conversation.id, user_id=other, joined_at=ctx.clock.now(), request_state="pending")
+        )
+    else:  # they deleted the earlier request: it comes back as a fresh request without the old history
+        row.request_state, row.joined_at = "pending", ctx.clock.now()
     await session.flush()
 
 
@@ -50,9 +54,10 @@ async def resolve(session: AsyncSession, ctx: Ctx, member: ConversationMember, a
         other = _other_party(conversation, member.user_id)
         if other and other != member.user_id and not await is_blocked(session, member.user_id, other):
             session.add(Block(blocker_id=member.user_id, blocked_id=other, created_at=ctx.clock.now()))
-    # block and delete both drop the request from my list; the sender is not told.
+    # Block and delete both drop the request from my list. The row stays (marked "deleted") so the
+    # sender's view of the chat doesn't change — they are not told.
     user_id = member.user_id
-    await session.delete(member)
+    member.request_state = "deleted"
     await session.commit()
     await ctx.hub.send_to_users([user_id], events.conversation_removed(conversation.id))
     return False

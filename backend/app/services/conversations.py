@@ -36,7 +36,7 @@ async def build_views(
     }
     from app.services.pins import pins_for  # pins imports this module's helpers lazily too
 
-    pins = await pins_for(session, ctx, ids)
+    pins = await pins_for(session, ctx, ids, viewer_id)
     views = []
     for c in conversations:
         ms = members[c.id]
@@ -49,14 +49,14 @@ async def build_views(
                 MemberOut(
                     user=to_user_out(m.user, ctx, prefs.get(m.user_id)),
                     role=m.role,
-                    request_state=m.request_state,
+                    request_state="pending" if m.request_state == "deleted" else m.request_state,
                     joined_at=m.joined_at,
                     left_at=m.left_at,
                     last_delivered_message_id=delivered,
                     last_read_message_id=read,
                 )
             )
-        is_note_to_self = c.kind == "direct" and not others
+        is_note_to_self = c.kind == "direct" and len(set((c.direct_key or "").split(":"))) == 1
         changed = False
         if c.kind == "group":
             title, url, color = c.title or "Group", avatar_url(ctx, c.avatar_path), AVATAR_COLORS[c.id % len(AVATAR_COLORS)]
@@ -113,7 +113,9 @@ async def list_conversations(session: AsyncSession, ctx: Ctx, viewer_id: int) ->
 async def active_member_ids(session: AsyncSession, conversation_id: int) -> list[int]:
     rows = await session.scalars(
         select(ConversationMember.user_id).where(
-            ConversationMember.conversation_id == conversation_id, ConversationMember.left_at.is_(None)
+            ConversationMember.conversation_id == conversation_id,
+            ConversationMember.left_at.is_(None),
+            ConversationMember.request_state != "deleted",
         )
     )
     return list(rows)
@@ -172,6 +174,10 @@ async def get_or_create_direct(session: AsyncSession, ctx: Ctx, me: User, other_
     key = f"{min(me.id, other_id)}:{max(me.id, other_id)}"
     existing = await session.scalar(select(Conversation).where(Conversation.direct_key == key))
     if existing is not None:
+        mine = await session.get(ConversationMember, (existing.id, me.id))
+        if mine is not None and mine.request_state == "deleted":  # I deleted their request, now I write first
+            mine.request_state, mine.joined_at = "accepted", ctx.clock.now()
+            await session.commit()
         return existing, False
     now = ctx.clock.now()
     timer = (await get_settings(session, me.id)).default_disappearing_seconds
@@ -263,7 +269,7 @@ async def add_members(session: AsyncSession, ctx: Ctx, me: User, conversation: C
     for uid in dict.fromkeys(user_ids):
         await _require_user(session, uid)
         existing = await repo.membership(session, conversation.id, uid)
-        if existing is not None and existing.left_at is None:
+        if existing is not None and existing.left_at is None and existing.request_state != "deleted":
             continue
         state = await initial_request_state(session, uid, me.id)
         if existing is not None:  # re-joining: fresh window, no access to the gap

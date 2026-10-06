@@ -110,7 +110,9 @@ function applyToCache(qc: QueryClient, e: ServerEvent, ctx: EventContext): void 
     case "message.created":
       return onMessageCreated(qc, e.data, ctx);
     case "message.updated":
-      upsertMessage(qc, e.data);
+      // Replace only: an edit to a message that isn't loaded (an older page, or deleted for me) must not
+      // be inserted at the bottom of the timeline.
+      mapMessages(qc, e.data.conversation_id, (items) => items.map((m) => (m.id === e.data.id ? e.data : m)));
       return patchConversation(qc, e.data.conversation_id, (c) =>
         c.last_message?.id === e.data.id ? { ...c, last_message: e.data } : c,
       );
