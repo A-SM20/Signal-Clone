@@ -31,3 +31,9 @@ def test_cors_allows_configured_origin(client):
         headers={"Origin": "http://localhost:3000", "Access-Control-Request-Method": "GET"},
     )
     assert r.headers["access-control-allow-origin"] == "http://localhost:3000"
+
+
+def test_health_answers_head_for_uptime_monitors(client):
+    # UptimeRobot and similar monitors check with HEAD; a 405 would show the API as down.
+    r = client.head("/api/health")
+    assert r.status_code == 200
