@@ -5,8 +5,8 @@ phones, with real-time 1:1 and group chat, delivery/read ticks, typing indicator
 of Signal features beyond the brief (message requests, safety numbers, edit/delete, pinned messages, polls, chat
 folders, voice notes and device linking).
 
-- **Live demo:** https://signal-clone-work-web.onrender.com (API: https://signal-clone-work-api.onrender.com/api/health)
-- **Repository:** https://github.com/AdithyaSM31/signal-clone-work — `frontend/` (Next.js) and `backend/` (FastAPI)
+- **Live demo:** https://signal-clone-asm20-web.onrender.com (API: https://signal-clone-asm20-api.onrender.com/api/health)
+- **Repository:** https://github.com/A-SM20/Signal-Clone — `frontend/` (Next.js) and `backend/` (FastAPI)
 
 > The API runs on Render's free tier. The first request after a cold start can take ~1 minute; the app shows a
 > "Connecting…" screen meanwhile. Chats are stored in a free Neon Postgres database, so they survive restarts
