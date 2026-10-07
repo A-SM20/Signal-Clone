@@ -189,7 +189,7 @@ export function Composer({ conversation, slots = {} }: { conversation: Conversat
             onKeyDown={onKeyDown}
             onPaste={onPaste}
             onBlur={typing.stop}
-            className="max-h-40 w-full resize-none bg-transparent text-fg outline-none placeholder:text-fg-3"
+            className="max-h-40 w-full resize-none bg-transparent text-fg outline-none focus-visible:outline-none placeholder:text-fg-3"
             style={{ 
               fontFamily: "var(--chat-font-family, inherit)",
               fontSize: "var(--chat-font-size, 14px)",

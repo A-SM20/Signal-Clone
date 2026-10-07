@@ -68,7 +68,7 @@ export const SearchInput = forwardRef<
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={(e) => e.key === "Escape" && value && (e.stopPropagation(), onChange(""))}
-        className="min-w-0 flex-1 bg-transparent text-[14px] text-fg outline-none placeholder:text-fg-3 [&::-webkit-search-cancel-button]:hidden"
+        className="min-w-0 flex-1 bg-transparent text-[14px] text-fg outline-none focus-visible:outline-none placeholder:text-fg-3 [&::-webkit-search-cancel-button]:hidden"
       />
       {value && (
         <button aria-label="Clear search" onClick={() => onChange("")} className="rounded-full p-0.5 hover:bg-hover">
