@@ -100,7 +100,7 @@ export function AppShell(slots: ShellSlots) {
         {me?.username === null && (
           <div className="absolute bottom-20 left-4 right-4 rounded-xl bg-surface-2 p-4 shadow-lg flex items-center justify-between border border-divider">
             <p className="text-[14px] text-fg">You haven't set a username yet.</p>
-            <button onClick={() => { useUi.getState().setTab("settings"); useUi.getState().setPanel("profile"); }} className="rounded-full bg-primary px-4 py-2 text-[14px] font-semibold text-white hover:bg-primary-hover">
+            <button onClick={() => { useUi.getState().setTab("settings"); useUi.getState().openSettings("profile"); }} className="rounded-full bg-primary px-4 py-2 text-[14px] font-semibold text-white hover:bg-primary-hover">
               Set now
             </button>
           </div>
@@ -119,7 +119,7 @@ export function AppShell(slots: ShellSlots) {
       {me?.username === null && (
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 rounded-xl bg-surface-2 p-4 shadow-lg flex items-center gap-4 border border-divider">
           <p className="text-[14px] text-fg">You haven't set a username yet.</p>
-          <button onClick={() => { useUi.getState().setTab("settings"); useUi.getState().setPanel("profile"); }} className="rounded-full bg-primary px-4 py-2 text-[14px] font-semibold text-white hover:bg-primary-hover">
+          <button onClick={() => { useUi.getState().setTab("settings"); useUi.getState().openSettings("profile"); }} className="rounded-full bg-primary px-4 py-2 text-[14px] font-semibold text-white hover:bg-primary-hover">
             Set now
           </button>
         </div>

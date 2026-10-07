@@ -26,3 +26,5 @@ AVATAR_COLORS = (
     "#5e6bd6", "#3d8f6e", "#b8562f", "#8a5bc7", "#2f7fa8", "#b0436b",
     "#6f7d2c", "#c26a1b", "#4a6fa5", "#9c4f91", "#2e8a87", "#a84a4a",
 )
+
+WALLPAPER_PRESETS = {"default", "dusk", "ocean", "forest", "rose", "midnight"}

@@ -1037,6 +1037,8 @@ export interface components {
             /** Last Seen At */
             last_seen_at: string | null;
             settings: components["schemas"]["SettingsOut"];
+            /** Has Pin */
+            has_pin: boolean;
         };
         /** MePatch */
         MePatch: {
