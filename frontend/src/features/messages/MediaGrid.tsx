@@ -16,6 +16,7 @@ function Img({ a, className, onClick }: { a: AttachmentOut; className?: string; 
       src={src}
       onError={onError}
       onClick={onClick}
+      onContextMenu={(e) => e.stopPropagation()}
       alt={a.original_name}
       loading="lazy"
       className={`cursor-zoom-in bg-surface-2 object-cover ${className ?? ""}`}
