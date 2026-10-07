@@ -27,7 +27,9 @@ jobs:
         if: failure()
         shell: bash
         run: |
-          { echo '### Backend test failures'; echo '```'; grep -E "^(FAILED|ERROR)|Error|assert" pytest.log | head -40; echo; tail -80 pytest.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          # Annotations are visible on the run page without signing in.
+          grep -E "^(FAILED|ERROR) " pytest.log | head -20 | while read -r line; do echo "::error title=pytest::${line}"; done
+          grep -E "^E  " pytest.log | head -15 | while read -r line; do echo "::warning title=pytest detail::${line}"; done
 
   frontend:
     runs-on: ubuntu-latest
