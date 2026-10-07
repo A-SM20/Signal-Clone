@@ -107,7 +107,7 @@ async def _attach(ctx: SeedContext, message, media: dict) -> None:
         ctx.session.add(
             Attachment(
                 message_id=message.id, uploader_id=uploader, kind="image", mime_type="image/jpeg",
-                size_bytes=len(data), original_name=f"{name}.jpg", storage_key=store(ctx.settings.upload_dir, data, ".jpg"),
+                size_bytes=len(data), original_name=f"{name}.jpg", storage_key=store(ctx.session, data, ".jpg"),
                 width=960, height=720, position=position, created_at=message.created_at,
             )
         )
@@ -116,7 +116,7 @@ async def _attach(ctx: SeedContext, message, media: dict) -> None:
         ctx.session.add(
             Attachment(
                 message_id=message.id, uploader_id=uploader, kind="voice", mime_type="audio/wav",
-                size_bytes=len(data), original_name="Voice message.wav", storage_key=store(ctx.settings.upload_dir, data, ".wav"),
+                size_bytes=len(data), original_name="Voice message.wav", storage_key=store(ctx.session, data, ".wav"),
                 duration_ms=int(media["voice"] * 1000), waveform=bars, position=0, created_at=message.created_at,
             )
         )
@@ -125,7 +125,7 @@ async def _attach(ctx: SeedContext, message, media: dict) -> None:
         ctx.session.add(
             Attachment(
                 message_id=message.id, uploader_id=uploader, kind="file", mime_type="application/pdf",
-                size_bytes=len(data), original_name=media["file"], storage_key=store(ctx.settings.upload_dir, data, ".pdf"),
+                size_bytes=len(data), original_name=media["file"], storage_key=store(ctx.session, data, ".pdf"),
                 position=0, created_at=message.created_at,
             )
         )

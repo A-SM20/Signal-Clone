@@ -1,3 +1,5 @@
+import asyncio
+import os
 from datetime import datetime, timezone
 
 import pytest
@@ -13,14 +15,35 @@ def clock():
     return FrozenClock(datetime(2026, 10, 6, 12, 0, tzinfo=timezone.utc))
 
 
+# Set TEST_DATABASE_URL (a disposable Postgres database) to run the whole suite against Postgres;
+# every test then starts from an empty schema. Otherwise each test gets its own SQLite file.
+TEST_DATABASE_URL = os.environ.get("TEST_DATABASE_URL")
+
+
+def _reset_postgres(settings: Settings) -> None:
+    from app.db import create_engine
+    from app.models import Base
+
+    async def run():
+        engine = create_engine(settings)
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.drop_all)
+        await engine.dispose()
+
+    asyncio.run(run())
+
+
 def make_settings(tmp_path, **overrides) -> Settings:
-    return Settings(
+    settings = Settings(
+        database_url=TEST_DATABASE_URL,
         database_path=str(tmp_path / "test.db"),
-        upload_dir=str(tmp_path / "uploads"),
         seed_on_empty=False,
         sweepers_enabled=False,
         **overrides,
     )
+    if TEST_DATABASE_URL:
+        _reset_postgres(settings)
+    return settings
 
 
 @pytest.fixture

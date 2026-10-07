@@ -36,9 +36,9 @@ async def patch_me(body: MePatch, user: UserDep, session: SessionDep, ctx: CtxDe
 @router.post("/avatar", response_model=MeOut)
 async def upload_avatar(file: UploadFile, user: UserDep, session: SessionDep, ctx: CtxDep) -> MeOut:
     old = user.avatar_path
-    user.avatar_path = await save_avatar(ctx, file)
+    user.avatar_path = await save_avatar(session, file)
+    await delete_file(session, old)
     await session.commit()
-    delete_file(ctx, old)
     return to_me_out(user, ctx, await get_settings(session, user.id))
 
 

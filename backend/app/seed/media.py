@@ -2,8 +2,6 @@
 
 import io
 import random
-import uuid
-from pathlib import Path
 
 from PIL import Image, ImageDraw
 
@@ -52,12 +50,11 @@ def pdf_document(title: str) -> bytes:
     return out.getvalue()
 
 
-def store(upload_dir: str, data: bytes, ext: str) -> str:
-    key = uuid.uuid4().hex + ext
-    path = Path(upload_dir) / key
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_bytes(data)
-    return key
+def store(session, data: bytes, ext: str) -> str:
+    """Seed media goes into the same database-backed store as uploads."""
+    from app.services.files import store_bytes
+
+    return store_bytes(session, data, ext)
 
 
 def voice_tone(seconds: float = 6.0, rate: int = 16000) -> tuple[bytes, list[int]]:

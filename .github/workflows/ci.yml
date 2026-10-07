@@ -31,6 +31,33 @@ jobs:
           grep -E "^(FAILED|ERROR) " pytest.log | head -20 | while read -r line; do echo "::error title=pytest::${line}"; done
           grep -E "^E  " pytest.log | head -15 | while read -r line; do echo "::warning title=pytest detail::${line}"; done
 
+  backend-postgres:
+    # The deployed API uses Postgres (Neon); run the same suite against a real Postgres.
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: signal_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/signal_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.9"
+          cache: pip
+          cache-dependency-path: backend/requirements-dev.txt
+      - run: pip install -r requirements-dev.txt
+      - run: python -m pytest -q -ra
+
   frontend:
     runs-on: ubuntu-latest
     defaults:

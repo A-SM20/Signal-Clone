@@ -55,7 +55,7 @@ async def upload_voice(
 
 
 async def upload(session: AsyncSession, ctx: Ctx, uploader: User, file: UploadFile, **extra) -> Attachment:
-    stored = await save_upload(ctx, file)
+    stored = await save_upload(session, file)
     kind = extra.pop("kind", None) or ("image" if stored.mime_type in IMAGE_TYPES else "file")
     attachment = Attachment(
         uploader_id=uploader.id,
@@ -107,5 +107,5 @@ async def purge_for_messages(session: AsyncSession, ctx: Ctx, message_ids: list[
     """Deletes attachment rows and their files (used by delete-for-everyone and disappearing messages)."""
     for attachments in (await for_messages(session, message_ids)).values():
         for a in attachments:
-            delete_file(ctx, a.storage_key)
+            await delete_file(session, a.storage_key)
             await session.delete(a)

@@ -122,9 +122,9 @@ async def upload_group_avatar(
     if conversation.kind != "group":
         raise AppError(400, "not_a_group", "Only groups have their own photo")
     old = conversation.avatar_path
-    conversation.avatar_path = await save_avatar(ctx, file)
+    conversation.avatar_path = await save_avatar(session, file)
+    await delete_file(session, old)
     await session.commit()
-    delete_file(ctx, old)
     await svc.publish_conversation(session, ctx, conversation_id, await svc.active_member_ids(session, conversation_id))
     return await _view(session, ctx, conversation_id, user.id)
 

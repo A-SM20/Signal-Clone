@@ -19,6 +19,10 @@ services:
         value: "123456"
       - key: SEED_ON_EMPTY
         value: "true"
+      # Postgres connection string (e.g. Neon). Without it the API falls back to SQLite on Render's
+      # ephemeral disk and every restart or deploy wipes all chats. Paste it in the Render dashboard.
+      - key: DATABASE_URL
+        sync: false
       - key: CORS_ORIGINS
         value: https://signal-clone-asm20-web.onrender.com,http://localhost:3000
 

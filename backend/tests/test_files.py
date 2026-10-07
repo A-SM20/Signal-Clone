@@ -91,3 +91,29 @@ def test_group_avatar_admin_only(client):
     assert client.post(f"/api/conversations/{g['id']}/avatar", files=files, headers=b.headers).status_code == 403
     r = client.post(f"/api/conversations/{g['id']}/avatar", files=files, headers=a.headers)
     assert r.status_code == 200 and r.json()["avatar_url"].startswith("/api/files/")
+
+
+def test_files_are_stored_in_the_database(client):
+    """Render's disk is wiped on restart; file bytes must live with the (persistent) database."""
+    from sqlalchemy import select
+
+    from app.models import StoredFile
+    from tests.helpers import db_call
+
+    a = login(client, "+15550100001", "Alice")
+    url = _upload_avatar(client, a).json()["avatar_url"]
+    key = urlparse(url).path.rsplit("/", 1)[1]
+    stored = db_call(client, lambda s: s.scalar(select(StoredFile).where(StoredFile.key == key)))
+    assert stored is not None and stored.data == client.get(url).content
+
+
+def test_byte_ranges_for_media_seeking(client):
+    a = login(client, "+15550100001", "Alice")
+    url = _upload_avatar(client, a).json()["avatar_url"]
+    full = client.get(url).content
+    r = client.get(url, headers={"Range": "bytes=10-19"})
+    assert r.status_code == 206 and r.content == full[10:20]
+    assert r.headers["content-range"] == f"bytes 10-19/{len(full)}"
+    tail = client.get(url, headers={"Range": "bytes=-5"})
+    assert tail.status_code == 206 and tail.content == full[-5:]
+    assert client.get(url, headers={"Range": f"bytes={len(full)}-"}).status_code == 416

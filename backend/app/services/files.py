@@ -1,4 +1,4 @@
-"""Upload validation, on-disk storage and HMAC-signed download URLs."""
+"""Upload validation, database-backed file storage and HMAC-signed download URLs."""
 
 import hashlib
 import hmac
@@ -11,10 +11,13 @@ from pathlib import Path
 
 from fastapi import UploadFile
 from PIL import Image, ImageOps, UnidentifiedImageError
+from sqlalchemy import delete
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.constants import MAX_UPLOAD_BYTES
 from app.context import Ctx
 from app.errors import AppError
+from app.models import StoredFile
 
 ALLOWED_TYPES: dict[str, str] = {
     "image/jpeg": ".jpg",
@@ -42,7 +45,7 @@ AVATAR_SIZE = 512
 
 
 @dataclass(frozen=True)
-class StoredFile:
+class SavedUpload:
     storage_key: str
     mime_type: str
     size_bytes: int
@@ -74,15 +77,16 @@ def _image_size(data: bytes) -> tuple[int, int]:
         raise AppError(400, "unsupported_type", "That image could not be read") from None
 
 
-def _write(ctx: Ctx, ext: str, data: bytes) -> str:
+def store_bytes(session: AsyncSession, data: bytes, ext: str) -> str:
+    """Adds the file to the session under a fresh random key; the caller's commit saves it."""
     key = uuid.uuid4().hex + ext
-    path = Path(ctx.settings.upload_dir) / key
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_bytes(data)
+    session.add(StoredFile(key=key, mime_type=MIME_BY_EXT.get(ext, "application/octet-stream"), data=data))
     return key
 
 
-async def save_upload(ctx: Ctx, upload: UploadFile, *, allowed: Collection[str] = ALLOWED_TYPES) -> StoredFile:
+async def save_upload(
+    session: AsyncSession, upload: UploadFile, *, allowed: Collection[str] = ALLOWED_TYPES
+) -> SavedUpload:
     mime = _base_mime(upload.content_type)
     if mime not in allowed or mime not in ALLOWED_TYPES:
         raise AppError(400, "unsupported_type", "That file type isn't supported")
@@ -91,12 +95,12 @@ async def save_upload(ctx: Ctx, upload: UploadFile, *, allowed: Collection[str] 
     if mime in IMAGE_TYPES:
         width, height = _image_size(data)
     # The server picks the stored name; the uploaded filename is display-only.
-    key = _write(ctx, ALLOWED_TYPES[mime], data)
+    key = store_bytes(session, data, ALLOWED_TYPES[mime])
     name = Path(upload.filename or "file").name[:200]
-    return StoredFile(key, mime, len(data), name, width, height)
+    return SavedUpload(key, mime, len(data), name, width, height)
 
 
-async def save_avatar(ctx: Ctx, upload: UploadFile) -> str:
+async def save_avatar(session: AsyncSession, upload: UploadFile) -> str:
     """Square-crops and resizes to 512x512 JPEG; returns the storage key."""
     mime = _base_mime(upload.content_type)
     if mime not in IMAGE_TYPES:
@@ -107,7 +111,7 @@ async def save_avatar(ctx: Ctx, upload: UploadFile) -> str:
         square = ImageOps.fit(ImageOps.exif_transpose(img).convert("RGB"), (AVATAR_SIZE, AVATAR_SIZE))
         out = io.BytesIO()
         square.save(out, format="JPEG", quality=85)
-    return _write(ctx, ".jpg", out.getvalue())
+    return store_bytes(session, out.getvalue(), ".jpg")
 
 
 def _signature(ctx: Ctx, key: str, exp: int) -> str:
@@ -121,20 +125,17 @@ def sign_path(ctx: Ctx, storage_key: str) -> str:
     return f"/api/files/{storage_key}?exp={exp}&sig={_signature(ctx, storage_key, exp)}"
 
 
-def resolve_signed(ctx: Ctx, key: str, exp: int, sig: str) -> Path:
-    """Validates a signed request and returns the file path (raises AppError otherwise)."""
+def check_signed(ctx: Ctx, key: str, exp: int, sig: str) -> None:
+    """Validates a signed request (raises AppError otherwise)."""
     if not STORAGE_KEY.fullmatch(key):
         raise AppError(404, "not_found", "File not found")
     if not hmac.compare_digest(_signature(ctx, key, exp), sig):
         raise AppError(403, "bad_signature", "Invalid file link")
     if ctx.clock.now().timestamp() > exp:
         raise AppError(403, "expired", "This file link has expired")
-    path = Path(ctx.settings.upload_dir) / key
-    if not path.is_file():
-        raise AppError(404, "not_found", "File not found")
-    return path
 
 
-def delete_file(ctx: Ctx, storage_key: str | None) -> None:
-    if storage_key and STORAGE_KEY.fullmatch(storage_key):
-        (Path(ctx.settings.upload_dir) / storage_key).unlink(missing_ok=True)
+async def delete_file(session: AsyncSession, storage_key: str | None) -> None:
+    """Removes the stored bytes; the caller commits."""
+    if storage_key:
+        await session.execute(delete(StoredFile).where(StoredFile.key == storage_key))

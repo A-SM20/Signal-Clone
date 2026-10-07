@@ -10,8 +10,9 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
+    # Postgres connection string (e.g. Neon's). When unset, a local SQLite file at DATABASE_PATH is used.
+    database_url: str | None = None
     database_path: str = "./data/signal.db"
-    upload_dir: str = "./data/uploads"
     # Env value may be a JSON list or a comma-separated string.
     cors_origins: Annotated[list[str], NoDecode] = ["http://localhost:3000", "http://127.0.0.1:3000"]
     signing_secret: str = "dev-secret-change-me"

@@ -1,5 +1,7 @@
+import pytest
 from sqlalchemy import text
 
+from tests.conftest import TEST_DATABASE_URL
 from tests.helpers import db_call
 
 
@@ -13,6 +15,7 @@ def test_unknown_route_uses_error_envelope(client):
     assert r.status_code == 404 and r.json()["error"]["code"] == "not_found"
 
 
+@pytest.mark.skipif(bool(TEST_DATABASE_URL), reason="SQLite-only pragmas")
 def test_sqlite_pragmas(client):
     async def q(s):
         fk = (await s.execute(text("PRAGMA foreign_keys"))).scalar()

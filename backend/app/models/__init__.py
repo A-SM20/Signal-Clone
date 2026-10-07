@@ -11,6 +11,7 @@ from app.models.poll import Poll, PollOption, PollVote
 from app.models.reaction import Reaction
 from app.models.revision import MessageRevision
 from app.models.social import Block, Contact
+from app.models.stored_file import StoredFile
 from app.models.user import User, UserSettings
 from app.models.verification import IdentityVerification
 
@@ -34,6 +35,7 @@ __all__ = [
     "PollOption",
     "PollVote",
     "Reaction",
+    "StoredFile",
     "User",
     "UserSettings",
 ]

@@ -17,7 +17,7 @@ export default defineConfig({
           command: `${python} -m app.seed --reset && ${python} -m uvicorn app.main:app --port 8100`,
           cwd: "../backend",
           url: "http://localhost:8100/api/health",
-          env: { DATABASE_PATH: "./data/e2e.db", UPLOAD_DIR: "./data/e2e-uploads", CORS_ORIGINS: "http://localhost:3100" },
+          env: { DATABASE_PATH: "./data/e2e.db", CORS_ORIGINS: "http://localhost:3100" },
           reuseExistingServer: false,
           timeout: 120_000,
         },
