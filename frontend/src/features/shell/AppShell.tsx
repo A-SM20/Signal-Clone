@@ -67,7 +67,10 @@ export function AppShell(slots: ShellSlots) {
     setMe(me);
     applyTheme(me.settings.theme);
     applyChatColor(me.settings.chat_color);
-    import("@/lib/theme").then((m) => m.applyWallpaper(me.settings.chat_wallpaper));
+    import("@/lib/theme").then((m) => {
+      m.applyWallpaper(me.settings.chat_wallpaper);
+      m.applyTypography(me.settings.chat_font_family, me.settings.chat_font_size);
+    });
     if (!me.display_name) router.replace("/onboarding/?step=profile");
   }, [me, setMe, router]);
 

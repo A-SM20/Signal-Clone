@@ -28,6 +28,8 @@ class SettingsOut(BaseModel):
     notification_preview: Literal["name_and_message", "name_only", "none"]
     default_disappearing_seconds: int
     chat_wallpaper: str
+    chat_font_family: str
+    chat_font_size: int
 
 
 class MeOut(UserOut):
@@ -61,6 +63,8 @@ class SettingsPatch(BaseModel):
     notification_preview: Literal["name_and_message", "name_only", "none"] | None = None
     default_disappearing_seconds: int | None = Field(default=None)
     chat_wallpaper: Annotated[str, StringConstraints(max_length=16)] | None = None
+    chat_font_family: Annotated[str, StringConstraints(max_length=32)] | None = None
+    chat_font_size: int | None = Field(default=None, ge=10, le=30)
 
     @field_validator("default_disappearing_seconds")
     @classmethod

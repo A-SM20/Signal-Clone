@@ -51,6 +51,19 @@ export function applyWallpaper(name: string): void {
   document.documentElement.style.setProperty("--chat-wallpaper", WALLPAPER_COLORS[name] ?? WALLPAPER_COLORS.default);
 }
 
+export const FONT_FAMILIES: Record<string, string> = {
+  system: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+  serif: 'ui-serif, Georgia, Cambria, "Times New Roman", Times, serif',
+  monospace: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+  dyslexic: '"OpenDyslexic", ui-sans-serif, system-ui, sans-serif',
+};
+
+export function applyTypography(family: string | undefined, size: number | undefined): void {
+  document.documentElement.style.setProperty("--chat-font-family", FONT_FAMILIES[family ?? "system"] ?? FONT_FAMILIES.system);
+  document.documentElement.style.setProperty("--chat-font-size", `${size ?? 14}px`);
+  document.documentElement.style.setProperty("--chat-line-height", `${Math.max(20, (size ?? 14) * 1.4)}px`);
+}
+
 /** Inline <head> script: applies the saved theme before first paint to avoid a light flash. */
 export const THEME_BOOT_SCRIPT = `(() => {
   try {

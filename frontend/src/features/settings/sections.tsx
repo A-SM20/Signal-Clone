@@ -246,6 +246,35 @@ export function AppearanceSection({ me }: { me: MeOut }) {
           ))}
         </div>
       </Group>
+      <Group title="Chat typography">
+        <Choice
+          name="Font family"
+          value={me.settings.chat_font_family || "system"}
+          onChange={(chat_font_family) => updateSettings({ chat_font_family })}
+          options={[
+            { value: "system", label: "System Default" },
+            { value: "serif", label: "Serif" },
+            { value: "monospace", label: "Monospace" },
+            { value: "dyslexic", label: "OpenDyslexic" },
+          ]}
+        />
+      </Group>
+      <Group title="Chat text size">
+        <div className="px-4 py-3 border-t border-divider first:border-t-0 flex items-center justify-between">
+          <span className="text-[14px]">Size</span>
+          <select
+            value={me.settings.chat_font_size || 14}
+            onChange={(e) => updateSettings({ chat_font_size: parseInt(e.target.value, 10) })}
+            className="bg-surface-2 rounded-md px-2 py-1 outline-none text-[14px]"
+          >
+            {[10, 12, 14, 16, 18, 20, 24].map((size) => (
+              <option key={size} value={size}>
+                {size}px {size === 14 ? "(Default)" : ""}
+              </option>
+            ))}
+          </select>
+        </div>
+      </Group>
       <Group title="Chat wallpaper" footer="Changes the background color of your chats.">
         <Choice
           name="Chat wallpaper"

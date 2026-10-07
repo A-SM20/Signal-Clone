@@ -4,7 +4,7 @@ import { apiFetch } from "@/lib/api/client";
 import { qk } from "@/lib/api/queryKeys";
 import type { MeOut, SettingsOut } from "@/lib/api/types";
 import { queryClient } from "@/lib/queryClient";
-import { applyChatColor, applyTheme, applyWallpaper } from "@/lib/theme";
+import { applyChatColor, applyTheme, applyWallpaper, applyTypography } from "@/lib/theme";
 import { useAuth } from "@/stores/auth";
 import { toast } from "@/stores/toast";
 
@@ -22,6 +22,9 @@ export async function updateSettings(changes: Partial<SettingsOut>): Promise<voi
   if (changes.theme) applyTheme(changes.theme);
   if (changes.chat_color) applyChatColor(changes.chat_color);
   if (changes.chat_wallpaper) applyWallpaper(changes.chat_wallpaper);
+  if (changes.chat_font_family !== undefined || changes.chat_font_size !== undefined) {
+    applyTypography(optimistic.settings.chat_font_family, optimistic.settings.chat_font_size);
+  }
   try {
     const settings = await apiFetch<SettingsOut>("/api/me/settings", { method: "PATCH", json: changes });
     storeMe({ ...optimistic, settings });
@@ -30,6 +33,7 @@ export async function updateSettings(changes: Partial<SettingsOut>): Promise<voi
     applyTheme(me.settings.theme);
     applyChatColor(me.settings.chat_color);
     applyWallpaper(me.settings.chat_wallpaper);
+    applyTypography(me.settings.chat_font_family, me.settings.chat_font_size);
     toast("Couldn't save your settings");
   }
 }

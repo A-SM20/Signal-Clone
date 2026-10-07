@@ -38,3 +38,5 @@ class UserSettings(Base):
     notification_preview: Mapped[str] = mapped_column(String(20), default="name_and_message")
     default_disappearing_seconds: Mapped[int] = mapped_column(Integer, default=0)
     chat_wallpaper: Mapped[str] = mapped_column(String(16), default="default")
+    chat_font_family: Mapped[str] = mapped_column(String(32), default="system")
+    chat_font_size: Mapped[int] = mapped_column(Integer, default=14)
