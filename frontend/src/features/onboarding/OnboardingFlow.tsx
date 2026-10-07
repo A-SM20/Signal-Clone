@@ -60,6 +60,7 @@ export function OnboardingFlow() {
   const [code, setCode] = useState("");
   const [first, setFirst] = useState("");
   const [last, setLast] = useState("");
+  const [pin, setPin] = useState("");
   const [photo, setPhoto] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -118,7 +119,7 @@ export function OnboardingFlow() {
       }
       const me = await apiFetch<MeOut>("/api/me", {
         method: "PATCH",
-        json: { display_name: [first.trim(), last.trim()].filter(Boolean).join(" ") },
+        json: { display_name: [first.trim(), last.trim()].filter(Boolean).join(" "), pin: pin.trim() || null },
       });
       useAuth.getState().setMe(me);
       queryClient.setQueryData(qk.me, me);
@@ -138,18 +139,17 @@ export function OnboardingFlow() {
         <form onSubmit={submitCode} className="w-full">
           <input
             autoFocus
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            aria-label="Verification code"
-            maxLength={6}
+            aria-label="Verification code or PIN"
+            maxLength={64}
             value={code}
-            onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+            onChange={(e) => setCode(e.target.value)}
             placeholder="••••••"
-            className={`${field} text-center text-[24px] tracking-[0.6em]`}
+            className={`${field} text-center text-[24px] tracking-[0.3em]`}
+            type="password"
           />
-          <p className="mt-3 text-center text-[12px] text-fg-3">Demo mode: the code is always 123456.</p>
+          <p className="mt-3 text-center text-[12px] text-fg-3">Demo mode: enter the code 123456 or your custom PIN.</p>
           {errorLine}
-          <PrimaryButton busy={busy} disabled={code.length !== 6}>
+          <PrimaryButton busy={busy} disabled={code.length < 4}>
             Continue
           </PrimaryButton>
           <button type="button" onClick={() => setStep("phone")} className="mt-4 w-full text-[14px] text-primary">
@@ -191,6 +191,7 @@ export function OnboardingFlow() {
           />
           <input autoFocus aria-label="First name" placeholder="First name (required)" value={first} onChange={(e) => setFirst(e.target.value)} className={field} maxLength={40} />
           <input aria-label="Last name" placeholder="Last name (optional)" value={last} onChange={(e) => setLast(e.target.value)} className={field} maxLength={39} />
+          <input aria-label="PIN" placeholder="Set a PIN for easy login (optional)" value={pin} onChange={(e) => setPin(e.target.value)} className={field} maxLength={64} type="password" />
           {errorLine}
           <PrimaryButton busy={busy} disabled={!first.trim()}>
             Next

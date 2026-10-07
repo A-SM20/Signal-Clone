@@ -4,7 +4,7 @@ import { apiFetch } from "@/lib/api/client";
 import { qk } from "@/lib/api/queryKeys";
 import type { MeOut, SettingsOut } from "@/lib/api/types";
 import { queryClient } from "@/lib/queryClient";
-import { applyChatColor, applyTheme } from "@/lib/theme";
+import { applyChatColor, applyTheme, applyWallpaper } from "@/lib/theme";
 import { useAuth } from "@/stores/auth";
 import { toast } from "@/stores/toast";
 
@@ -21,6 +21,7 @@ export async function updateSettings(changes: Partial<SettingsOut>): Promise<voi
   storeMe(optimistic);
   if (changes.theme) applyTheme(changes.theme);
   if (changes.chat_color) applyChatColor(changes.chat_color);
+  if (changes.chat_wallpaper) applyWallpaper(changes.chat_wallpaper);
   try {
     const settings = await apiFetch<SettingsOut>("/api/me/settings", { method: "PATCH", json: changes });
     storeMe({ ...optimistic, settings });
@@ -28,11 +29,12 @@ export async function updateSettings(changes: Partial<SettingsOut>): Promise<voi
     storeMe(me);
     applyTheme(me.settings.theme);
     applyChatColor(me.settings.chat_color);
+    applyWallpaper(me.settings.chat_wallpaper);
     toast("Couldn't save your settings");
   }
 }
 
-export async function updateProfile(changes: { display_name?: string; about?: string | null; username?: string | null }) {
+export async function updateProfile(changes: { display_name?: string; about?: string | null; username?: string | null; pin?: string | null }) {
   storeMe(await apiFetch<MeOut>("/api/me", { method: "PATCH", json: changes }));
 }
 

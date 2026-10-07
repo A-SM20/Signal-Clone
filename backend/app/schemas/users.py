@@ -3,7 +3,7 @@ from typing import Annotated, Literal
 
 from pydantic import AfterValidator, BaseModel, Field, StringConstraints, field_validator
 
-from app.constants import DISAPPEARING_OPTIONS, USERNAME_PATTERN
+from app.constants import DISAPPEARING_OPTIONS, USERNAME_PATTERN, WALLPAPER_PRESETS
 
 
 class UserOut(BaseModel):
@@ -27,10 +27,12 @@ class SettingsOut(BaseModel):
     notifications_enabled: bool
     notification_preview: Literal["name_and_message", "name_only", "none"]
     default_disappearing_seconds: int
+    chat_wallpaper: str
 
 
 class MeOut(UserOut):
     settings: SettingsOut
+    has_pin: bool
 
 
 def _not_blank(value: str) -> str:
@@ -46,6 +48,7 @@ class MePatch(BaseModel):
     display_name: DisplayName | None = None
     about: Annotated[str, StringConstraints(max_length=140)] | None = None
     username: Annotated[str, StringConstraints(pattern=USERNAME_PATTERN)] | None = None
+    pin: Annotated[str, StringConstraints(max_length=64)] | None = None
 
 
 class SettingsPatch(BaseModel):
@@ -57,10 +60,18 @@ class SettingsPatch(BaseModel):
     notifications_enabled: bool | None = None
     notification_preview: Literal["name_and_message", "name_only", "none"] | None = None
     default_disappearing_seconds: int | None = Field(default=None)
+    chat_wallpaper: Annotated[str, StringConstraints(max_length=16)] | None = None
 
     @field_validator("default_disappearing_seconds")
     @classmethod
     def _allowed_timer(cls, value: int | None) -> int | None:
         if value is not None and value not in DISAPPEARING_OPTIONS:
             raise ValueError(f"must be one of {DISAPPEARING_OPTIONS}")
+        return value
+
+    @field_validator("chat_wallpaper")
+    @classmethod
+    def _allowed_wallpaper(cls, value: str | None) -> str | None:
+        if value is not None and value not in WALLPAPER_PRESETS:
+            raise ValueError(f"must be one of {WALLPAPER_PRESETS}")
         return value

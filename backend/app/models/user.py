@@ -13,6 +13,7 @@ class User(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     phone: Mapped[str] = mapped_column(String(20), unique=True)
     username: Mapped[str | None] = mapped_column(String(40), unique=True)
+    pin: Mapped[str | None] = mapped_column(String(64))
     display_name: Mapped[str] = mapped_column(String(80))
     about: Mapped[str | None] = mapped_column(String(140))
     avatar_path: Mapped[str | None] = mapped_column(String(64))
@@ -36,3 +37,4 @@ class UserSettings(Base):
     notifications_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     notification_preview: Mapped[str] = mapped_column(String(20), default="name_and_message")
     default_disappearing_seconds: Mapped[int] = mapped_column(Integer, default=0)
+    chat_wallpaper: Mapped[str] = mapped_column(String(16), default="default")

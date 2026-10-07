@@ -19,6 +19,7 @@ export function useMessagePages(conversationId: number) {
       ),
     initialPageParam: null as number | null,
     getNextPageParam: (last) => (last.has_more ? last.items[last.items.length - 1].id : undefined),
+    refetchInterval: 10_000,
   });
 }
 

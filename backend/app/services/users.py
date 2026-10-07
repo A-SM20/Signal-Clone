@@ -37,7 +37,7 @@ def to_settings_out(settings: UserSettings) -> SettingsOut:
 def to_me_out(user: User, ctx: Ctx, settings: UserSettings) -> MeOut:
     base = to_user_out(user, ctx, settings)
     # Your own presence is always visible to you.
-    return MeOut(**base.model_dump() | {"online": True}, settings=to_settings_out(settings))
+    return MeOut(**base.model_dump() | {"online": True}, settings=to_settings_out(settings), has_pin=bool(user.pin))
 
 
 async def get_settings(session: AsyncSession, user_id: int) -> UserSettings:

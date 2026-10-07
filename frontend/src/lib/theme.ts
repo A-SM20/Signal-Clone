@@ -38,6 +38,19 @@ export function applyChatColor(name: string): void {
   document.documentElement.style.setProperty("--chat-color", CHAT_COLORS[name] ?? CHAT_COLORS.ultramarine);
 }
 
+export const WALLPAPER_COLORS: Record<string, string> = {
+  default: "transparent",
+  dusk: "rgba(102, 102, 153, 0.2)",
+  ocean: "rgba(0, 153, 204, 0.15)",
+  forest: "rgba(76, 153, 0, 0.15)",
+  rose: "rgba(204, 102, 153, 0.15)",
+  midnight: "rgba(25, 25, 112, 0.4)",
+};
+
+export function applyWallpaper(name: string): void {
+  document.documentElement.style.setProperty("--chat-wallpaper", WALLPAPER_COLORS[name] ?? WALLPAPER_COLORS.default);
+}
+
 /** Inline <head> script: applies the saved theme before first paint to avoid a light flash. */
 export const THEME_BOOT_SCRIPT = `(() => {
   try {

@@ -46,7 +46,8 @@ export function ConversationView() {
   const left = conversation.me.left_at !== null;
   return (
     <div
-      className="relative flex h-full flex-col bg-bg"
+      className="relative flex h-full flex-col"
+      style={{ backgroundColor: "var(--chat-wallpaper, var(--bg))" }}
       onDragOver={(e) => {
         if (!left && e.dataTransfer.types.includes("Files")) e.preventDefault();
       }}
