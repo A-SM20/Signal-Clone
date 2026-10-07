@@ -92,7 +92,7 @@ def test_presence_not_sent_to_strangers(client):
     c = login(client, "+15550100003", "Carol")
     with ws_session(client, c.token) as carol_ws:
         with ws_session(client, a.token):
-            assert_no_event(carol_ws)
+            assert_no_event(carol_ws, ignore=())
 
 
 def test_last_seen_set_on_disconnect(client, clock):

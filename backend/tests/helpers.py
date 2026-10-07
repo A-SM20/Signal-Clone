@@ -46,11 +46,17 @@ def ws_session(client, token: str):
         yield ws
 
 
-def assert_no_event(ws) -> None:
-    """Proves nothing was queued: the very next frame after a ping must be the pong."""
+def assert_no_event(ws, ignore: tuple[str, ...] = ("presence",)) -> None:
+    """Proves nothing was queued: after a ping, only the pong may arrive.
+
+    Presence is broadcast from a background task when a peer connects, so it can land at any moment;
+    it is ignored unless a test is specifically about presence (pass ignore=())."""
     ws.send_json({"type": "ping"})
-    frame = ws.receive_json()
-    assert frame["type"] == "pong", f"unexpected event: {frame}"
+    while True:
+        frame = ws.receive_json()
+        if frame["type"] == "pong":
+            return
+        assert frame["type"] in ignore, f"unexpected event: {frame}"
 
 
 def befriend(client, *sessions: Session) -> None:
