@@ -103,7 +103,7 @@ Browser (Next.js static export, TypeScript)
    background tasks: disappearing-message sweeper (5 s), pin-expiry sweeper (60 s)
                                   ▼
           SQLite file (WAL, foreign_keys=ON, busy_timeout) — seeded when empty
-GitHub Actions (every 5 min) ──GET /api/health──▶ keeps the free API instance awake
+GitHub Actions (every 10 min) ──GET /api/health──▶ keeps the free API instance awake
 ```
 
 - **Frontend:** TanStack Query's cache is the single source of truth for server data; WebSocket events are applied
@@ -384,7 +384,7 @@ Steps: Render → **New → Blueprint** → pick the repo → Apply. If a servic
 update `CORS_ORIGINS` / `NEXT_PUBLIC_API_URL` to match.
 
 **Keep-alive:** free web services sleep after 15 idle minutes. `.github/workflows/keep-render-alive.yml` pings
-`/api/health` every 5 minutes (set the repository variable `API_URL` to your API's URL). GitHub may delay or skip
+`/api/health` every 10 minutes (set the repository variable `API_URL` to your API's URL). GitHub may delay or skip
 scheduled runs at busy times, so an occasional cold start is still possible. Note that this uses Render free-tier hours
 around the clock.
 
