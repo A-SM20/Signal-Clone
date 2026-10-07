@@ -15,7 +15,7 @@ export function MobileTabBar({ unread }: { unread: number }) {
   return (
     <nav
       aria-label="Main"
-      className="flex h-16 shrink-0 items-stretch justify-around border-t border-divider bg-surface pb-[env(safe-area-inset-bottom)]"
+      className="flex h-16 shrink-0 items-stretch justify-around border-t border-divider bg-surface pt-1 pb-[max(8px,env(safe-area-inset-bottom))]"
     >
       {TABS.map(({ id, label, Icon }) => {
         const active = tab === id;

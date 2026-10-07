@@ -1037,6 +1037,8 @@ export interface components {
             /** Last Seen At */
             last_seen_at: string | null;
             settings: components["schemas"]["SettingsOut"];
+            /** Has Pin */
+            has_pin: boolean;
         };
         /** MePatch */
         MePatch: {
@@ -1369,6 +1371,12 @@ export interface components {
             notification_preview: "name_and_message" | "name_only" | "none";
             /** Default Disappearing Seconds */
             default_disappearing_seconds: number;
+            /** Chat Wallpaper */
+            chat_wallpaper: string;
+            /** Chat Font Family */
+            chat_font_family: string;
+            /** Chat Font Size */
+            chat_font_size: number;
         };
         /** SettingsPatch */
         SettingsPatch: {
@@ -1388,6 +1396,12 @@ export interface components {
             notification_preview?: ("name_and_message" | "name_only" | "none") | null;
             /** Default Disappearing Seconds */
             default_disappearing_seconds?: number | null;
+            /** Chat Wallpaper */
+            chat_wallpaper?: string | null;
+            /** Chat Font Family */
+            chat_font_family?: string | null;
+            /** Chat Font Size */
+            chat_font_size?: number | null;
         };
         /** UserOut */
         UserOut: {

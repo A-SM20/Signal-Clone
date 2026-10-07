@@ -24,8 +24,10 @@ export function RequestBanner({ conversation: c }: { conversation: ConversationO
         method: "POST",
         json: { action },
       });
-      if (res) upsertConversation(res);
-      else {
+      if (res) {
+        upsertConversation(res);
+        if (action === "accept") queryClient.invalidateQueries({ queryKey: qk.contacts });
+      } else {
         queryClient.setQueryData<ConversationOut[]>(qk.conversations, (list) => list?.filter((x) => x.id !== c.id));
         select(null);
         if (action === "block") queryClient.invalidateQueries({ queryKey: qk.blocks });

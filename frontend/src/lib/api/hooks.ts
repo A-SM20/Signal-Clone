@@ -15,6 +15,7 @@ export function useConversations() {
     queryFn: () => apiFetch<ConversationOut[]>("/api/conversations"),
     enabled: !!token,
     select: sortConversations,
+    refetchInterval: 15_000,
   });
 }
 

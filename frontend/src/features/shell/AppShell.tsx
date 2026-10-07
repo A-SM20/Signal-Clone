@@ -67,6 +67,10 @@ export function AppShell(slots: ShellSlots) {
     setMe(me);
     applyTheme(me.settings.theme);
     applyChatColor(me.settings.chat_color);
+    import("@/lib/theme").then((m) => {
+      m.applyWallpaper(me.settings.chat_wallpaper);
+      m.applyTypography(me.settings.chat_font_family, me.settings.chat_font_size);
+    });
     if (!me.display_name) router.replace("/onboarding/?step=profile");
   }, [me, setMe, router]);
 
@@ -93,6 +97,14 @@ export function AppShell(slots: ShellSlots) {
       <div className="flex h-dvh flex-col bg-bg">
         <div className="relative min-h-0 flex-1">{showDetail ? (tab === "settings" ? slots.settingsList : detail) : list}</div>
         {!showDetail && <MobileTabBar unread={unread} />}
+        {me?.username === null && (
+          <div className="absolute bottom-20 left-4 right-4 rounded-xl bg-surface-2 p-4 shadow-lg flex items-center justify-between border border-divider">
+            <p className="text-[14px] text-fg">You haven't set a username yet.</p>
+            <button onClick={() => { useUi.getState().setTab("settings"); useUi.getState().openSettings("profile"); }} className="rounded-full bg-primary px-4 py-2 text-[14px] font-semibold text-white hover:bg-primary-hover">
+              Set now
+            </button>
+          </div>
+        )}
         {slots.overlays}
         {shortcutsGuide}
       </div>
@@ -104,6 +116,14 @@ export function AppShell(slots: ShellSlots) {
       <NavRail unread={unread} />
       <ResizableListPane resizable={breakpoint === "desktop"}>{list}</ResizableListPane>
       <main className="relative min-w-0 flex-1 border-l border-divider">{detail}</main>
+      {me?.username === null && (
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 rounded-xl bg-surface-2 p-4 shadow-lg flex items-center gap-4 border border-divider">
+          <p className="text-[14px] text-fg">You haven't set a username yet.</p>
+          <button onClick={() => { useUi.getState().setTab("settings"); useUi.getState().openSettings("profile"); }} className="rounded-full bg-primary px-4 py-2 text-[14px] font-semibold text-white hover:bg-primary-hover">
+            Set now
+          </button>
+        </div>
+      )}
       {slots.overlays}
       {shortcutsGuide}
     </div>

@@ -3,6 +3,7 @@ from sqlalchemy import select
 
 from app.api.deps import CtxDep, SessionDep, UserDep
 from app.errors import AppError
+import app.models
 from app.models import User
 from app.schemas.users import MeOut, MePatch, SettingsOut, SettingsPatch
 from app.services.files import delete_file, save_avatar
@@ -40,6 +41,17 @@ async def upload_avatar(file: UploadFile, user: UserDep, session: SessionDep, ct
     await delete_file(session, old)
     await session.commit()
     return to_me_out(user, ctx, await get_settings(session, user.id))
+
+
+@router.delete("", status_code=204)
+async def delete_me(user: UserDep, session: SessionDep, ctx: CtxDep):
+    from app.realtime.ws_router import CLOSE_REVOKED
+    devices = await session.scalars(select(app.models.Device).where(app.models.Device.user_id == user.id))
+    for d in devices:
+        await ctx.hub.close_device(d.id, CLOSE_REVOKED)
+    await session.delete(user)
+    await session.commit()
+
 
 
 @router.get("/settings", response_model=SettingsOut)

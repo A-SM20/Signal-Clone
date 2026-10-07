@@ -44,6 +44,11 @@ async def resolve(session: AsyncSession, ctx: Ctx, member: ConversationMember, a
     conversation = await session.get_one(Conversation, member.conversation_id)
     if action == "accept":
         member.request_state = "accepted"
+        other = _other_party(conversation, member.user_id)
+        if other and other != member.user_id:
+            from app.services.contacts import is_contact, Contact
+            if not await is_contact(session, member.user_id, other):
+                session.add(Contact(owner_id=member.user_id, contact_id=other, created_at=ctx.clock.now()))
         await session.commit()
         from app.services.conversations import active_member_ids, publish_conversation
 

@@ -130,15 +130,37 @@ export function ProfileSection({ me }: { me: MeOut }) {
 }
 
 export function AccountSection({ me }: { me: MeOut }) {
+  const changePin = async () => {
+    const pin = prompt("Enter new PIN (or leave empty to remove it):");
+    if (pin === null) return;
+    try {
+      await updateProfile({ pin: pin.trim() || null });
+      toast("PIN updated successfully");
+    } catch (e) {
+      toast("Couldn't update PIN");
+    }
+  };
+
+  const deleteAccount = async () => {
+    if (!confirm("Are you sure you want to delete your account? This cannot be undone.")) return;
+    try {
+      await apiFetch("/api/me", { method: "DELETE" });
+      logout();
+    } catch (e) {
+      toast("Couldn't delete account");
+    }
+  };
+
   return (
     <>
       <Group title="Account">
         <SettingRow label="Phone number" detail={formatPhone(me.phone)} />
         <SettingRow label="Username" detail={me.username ?? "Not set"} />
+        <SettingRow label="PIN" detail={me.has_pin ? "Enabled" : "Not set"} onClick={changePin} />
       </Group>
       <Group>
         <SettingRow label="Log out" control={<LogOut size={18} className="text-fg-2" />} onClick={logout} />
-        <SettingRow label="Delete account" detail="Coming soon" onClick={() => toast("Account deletion is coming soon")} />
+        <SettingRow label="Delete account" detail="Permanently delete your data" onClick={deleteAccount} />
       </Group>
     </>
   );
@@ -223,6 +245,50 @@ export function AppearanceSection({ me }: { me: MeOut }) {
             </button>
           ))}
         </div>
+      </Group>
+      <Group title="Chat typography">
+        <Choice
+          name="Font family"
+          value={me.settings.chat_font_family || "system"}
+          onChange={(chat_font_family) => updateSettings({ chat_font_family })}
+          options={[
+            { value: "system", label: "System Default" },
+            { value: "serif", label: "Serif" },
+            { value: "monospace", label: "Monospace" },
+            { value: "dyslexic", label: "OpenDyslexic" },
+          ]}
+        />
+      </Group>
+      <Group title="Chat text size">
+        <div className="px-4 py-3 border-t border-divider first:border-t-0 flex items-center justify-between">
+          <span className="text-[14px]">Size</span>
+          <select
+            value={me.settings.chat_font_size || 14}
+            onChange={(e) => updateSettings({ chat_font_size: parseInt(e.target.value, 10) })}
+            className="bg-surface-2 rounded-md px-2 py-1 outline-none text-[14px]"
+          >
+            {[10, 12, 14, 16, 18, 20, 24].map((size) => (
+              <option key={size} value={size}>
+                {size}px {size === 14 ? "(Default)" : ""}
+              </option>
+            ))}
+          </select>
+        </div>
+      </Group>
+      <Group title="Chat wallpaper" footer="Changes the background color of your chats.">
+        <Choice
+          name="Chat wallpaper"
+          value={me.settings.chat_wallpaper}
+          onChange={(chat_wallpaper) => updateSettings({ chat_wallpaper })}
+          options={[
+            { value: "default", label: "Default" },
+            { value: "dusk", label: "Dusk" },
+            { value: "ocean", label: "Ocean" },
+            { value: "forest", label: "Forest" },
+            { value: "rose", label: "Rose" },
+            { value: "midnight", label: "Midnight" },
+          ]}
+        />
       </Group>
     </>
   );

@@ -77,14 +77,19 @@ export const MessageBubble = memo(function MessageBubble({
       )}
       <div className={`flex max-w-[min(75%,560px)] flex-col ${mine ? "items-end" : "items-start"}`}>
         <div
-          className={`relative px-3 pt-[7px] pb-[6px] text-[14px] leading-[20px] ${
+          className={`relative px-3 pt-[7px] pb-[6px] ${
             deleted
               ? "border border-divider bg-transparent text-fg-2 italic"
               : outgoing
                 ? "bg-bubble-out text-bubble-out-fg"
                 : "bg-bubble-in text-bubble-in-fg"
           }`}
-          style={{ borderRadius: radius(position, mine) }}
+          style={{ 
+            borderRadius: radius(position, mine),
+            fontFamily: "var(--chat-font-family, inherit)",
+            fontSize: "var(--chat-font-size, 14px)",
+            lineHeight: "var(--chat-line-height, 20px)"
+          }}
         >
           {showName && sender && !deleted && (
             <div className="mb-0.5 text-[13px] font-semibold" style={{ color: sender.avatar_color }}>
