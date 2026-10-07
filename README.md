@@ -16,8 +16,9 @@ folders, voice notes and device linking).
 
 ## Try it
 
-Sign in with any demo account. Verification is mocked: **every number uses the code `123456`**
-(the demo-account buttons skip the code screen).
+Sign in by typing a demo account's phone number (country code `+1`, then e.g. `555 010 0001`) and the **default
+PIN `123456`**. No SMS is sent. New numbers work too: they create a fresh account, and during profile setup you can
+choose your own PIN, which then replaces `123456` for that account.
 
 | Name | Phone | What to look at |
 |---|---|---|
@@ -45,7 +46,7 @@ Sign in with any demo account. Verification is mocked: **every number uses the c
 
 ### Must-haves (from the brief)
 
-- **Auth & profile:** phone number + mocked OTP, profile name/about/photo, username, log out.
+- **Auth & profile:** phone number + PIN (default `123456`, replaceable with your own; no SMS), profile name/about/photo, username, log out, delete account.
 - **Chat list:** recent-first with pinned chats on top, search (chats, contacts, messages), add contact by phone or
   username, unread badges, last-message preview (sender name in groups), typing shown in the row, online/last-seen.
 - **1:1 messaging:** real-time over WebSockets, timestamps, sending → sent → delivered → read ticks, typing indicator,
@@ -358,7 +359,7 @@ The API seeds the demo data on first start (empty database). To reset it, stop t
 | `DATABASE_PATH` | backend | `./data/signal.db` | SQLite file, used when `DATABASE_URL` is unset |
 | `CORS_ORIGINS` | backend | `http://localhost:3000,http://127.0.0.1:3000` | Allowed frontend origins (comma-separated) |
 | `SIGNING_SECRET` | backend | dev value | HMAC key for file URLs — set a random value in production |
-| `MOCK_OTP` | backend | `123456` | The fixed verification code |
+| `MOCK_OTP` | backend | `123456` | The default PIN (for every account that hasn't set its own) |
 | `SEED_ON_EMPTY` | backend | `true` | Seed demo data when the users table is empty |
 | `NEXT_PUBLIC_API_URL` | frontend (build time) | `http://localhost:8000` | API base URL |
 
@@ -406,7 +407,8 @@ around the clock.
 
 - **"Web layout" means Signal Desktop** (Signal has no browser client) and **"mobile layout" means Signal Android**;
   one responsive app serves both.
-- **OTP is mocked:** no SMS is sent; the code is always `123456`.
+- **Sign-in is mocked with a PIN:** no SMS is sent. Every account starts with the default PIN `123456`; setting your
+  own PIN replaces it for that account.
 - **Encryption is simulated.** Messages are stored in plaintext on the server. Each user gets a random mock identity key;
   safety numbers run Signal's real numeric-fingerprint algorithm over those keys, so the verification flow is genuine
   but the keys protect nothing.

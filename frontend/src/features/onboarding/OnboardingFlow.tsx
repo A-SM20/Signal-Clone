@@ -10,7 +10,7 @@ import type { AuthOut, MeOut } from "@/lib/api/types";
 import { queryClient } from "@/lib/queryClient";
 import { qk } from "@/lib/api/queryKeys";
 import { useAuth } from "@/stores/auth";
-import { DemoAccounts, formatPhone } from "./DemoAccounts";
+import { formatPhone } from "@/lib/phone";
 
 type Step = "phone" | "code" | "profile";
 
@@ -135,11 +135,11 @@ export function OnboardingFlow() {
 
   if (step === "code") {
     return (
-      <Shell title="Verification code" subtitle={<>Enter the code we sent to {formatPhone(phone)}</>}>
+      <Shell title="Enter your PIN" subtitle={<>Signing in as {formatPhone(phone)}</>}>
         <form onSubmit={submitCode} className="w-full">
           <input
             autoFocus
-            aria-label="Verification code or PIN"
+            aria-label="PIN"
             maxLength={64}
             value={code}
             onChange={(e) => setCode(e.target.value)}
@@ -147,7 +147,9 @@ export function OnboardingFlow() {
             className={`${field} text-center text-[24px] tracking-[0.3em]`}
             type="password"
           />
-          <p className="mt-3 text-center text-[12px] text-fg-3">Demo mode: enter the code 123456 or your custom PIN.</p>
+          <p className="mt-3 text-center text-[12px] text-fg-3">
+            Default PIN is <b className="text-fg-2">123456</b>. If you set your own PIN, use that instead.
+          </p>
           {errorLine}
           <PrimaryButton busy={busy} disabled={code.length < 4}>
             Continue
@@ -191,7 +193,7 @@ export function OnboardingFlow() {
           />
           <input autoFocus aria-label="First name" placeholder="First name (required)" value={first} onChange={(e) => setFirst(e.target.value)} className={field} maxLength={40} />
           <input aria-label="Last name" placeholder="Last name (optional)" value={last} onChange={(e) => setLast(e.target.value)} className={field} maxLength={39} />
-          <input aria-label="PIN" placeholder="Set a PIN for easy login (optional)" value={pin} onChange={(e) => setPin(e.target.value)} className={field} maxLength={64} type="password" />
+          <input aria-label="Your own PIN (optional)" placeholder="Your own PIN (optional, replaces 123456)" value={pin} onChange={(e) => setPin(e.target.value)} className={field} maxLength={64} type="password" />
           {errorLine}
           <PrimaryButton busy={busy} disabled={!first.trim()}>
             Next
@@ -231,7 +233,6 @@ export function OnboardingFlow() {
           Next
         </PrimaryButton>
       </form>
-      <DemoAccounts busy={busy} onPick={(p) => run(() => verify(p, "123456"))} />
       <a href="/link/" className="mt-6 text-[14px] font-medium text-primary hover:underline">
         Link this browser to an existing account
       </a>

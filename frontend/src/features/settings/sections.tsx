@@ -11,7 +11,7 @@ import type { DeviceOut, MeOut, UserOut } from "@/lib/api/types";
 import { timerLabel } from "@/lib/conversations";
 import { CHAT_COLORS } from "@/lib/theme";
 import { formatListTime } from "@/lib/time";
-import { formatPhone } from "@/features/onboarding/DemoAccounts";
+import { formatPhone } from "@/lib/phone";
 import { toast } from "@/stores/toast";
 import { logout, updateProfile, updateSettings, uploadAvatar } from "./useSettings";
 

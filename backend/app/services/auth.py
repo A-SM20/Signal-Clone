@@ -74,10 +74,10 @@ async def verify_otp(
     """Mocked verification: any number + the fixed OTP. Returns (raw token, user, is_new_user)."""
     normalized = normalize_phone(phone)
     user = await find_user_by_phone(session, normalized)
-    is_mock = hmac.compare_digest(code.strip(), ctx.settings.mock_otp)
-    is_pin = user is not None and user.pin is not None and code.strip() == user.pin
-    if not (is_mock or is_pin):
-        raise AppError(400, "invalid_otp", "That code is incorrect")
+    # Accounts without their own PIN use the default PIN (MOCK_OTP); once a PIN is set, only it works.
+    expected = user.pin if user is not None and user.pin else ctx.settings.mock_otp
+    if not hmac.compare_digest(code.strip().encode(), expected.encode()):
+        raise AppError(400, "invalid_otp", "That PIN is incorrect")
     created = user is None
     if created:
         user = await create_user(session, ctx, normalized)

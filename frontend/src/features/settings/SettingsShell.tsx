@@ -15,7 +15,7 @@ import {
 import type { ReactNode } from "react";
 import { Avatar } from "@/components/ui/Avatar";
 import { IconButton } from "@/components/ui/controls";
-import { formatPhone } from "@/features/onboarding/DemoAccounts";
+import { formatPhone } from "@/lib/phone";
 import { ComingSoon } from "@/features/placeholders/ComingSoon";
 import { useBreakpoint } from "@/lib/useBreakpoint";
 import { useAuth } from "@/stores/auth";

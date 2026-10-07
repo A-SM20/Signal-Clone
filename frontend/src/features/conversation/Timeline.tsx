@@ -6,7 +6,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import type { ConversationOut, MessageOut } from "@/lib/api/types";
 import { otherMember } from "@/lib/conversations";
 import { groupTimeline } from "@/lib/grouping";
-import { formatPhone } from "@/features/onboarding/DemoAccounts";
+import { formatPhone } from "@/lib/phone";
 import { useReadReceipts } from "@/lib/useReadReceipts";
 import { useTyping } from "@/stores/typing";
 import type { ActionHandlers } from "../messages/MessageActions";

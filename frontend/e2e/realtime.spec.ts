@@ -1,8 +1,14 @@
 import { expect, type Page, test } from "@playwright/test";
 
+// Seeded demo users (see the README). Every account starts with the default PIN 123456.
+const PHONES: Record<string, string> = { "Alice Chen": "555 010 0001", "Bob Martinez": "555 010 0002" };
+
 async function signIn(page: Page, name: string) {
   await page.goto("/onboarding/");
-  await page.getByRole("button", { name: new RegExp(name) }).click();
+  await page.getByRole("textbox", { name: "Phone number" }).fill(PHONES[name]);
+  await page.getByRole("button", { name: "Next" }).click();
+  await page.getByLabel("PIN", { exact: true }).fill("123456");
+  await page.getByRole("button", { name: "Continue" }).click();
   await expect(page.getByRole("heading", { name: "Chats" })).toBeVisible();
 }
 

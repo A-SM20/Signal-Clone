@@ -26,7 +26,7 @@ import { qk } from "@/lib/api/queryKeys";
 import type { ConversationOut, MemberOut } from "@/lib/api/types";
 import { isMuted, otherMember, timerLabel } from "@/lib/conversations";
 import { canEditGroupInfo, canManageMembers, canRemove, isActive } from "@/lib/permissions";
-import { formatPhone } from "@/features/onboarding/DemoAccounts";
+import { formatPhone } from "@/lib/phone";
 import { toast } from "@/stores/toast";
 import { useUi } from "@/stores/ui";
 import { SafetyNumberModal } from "../contacts/SafetyNumberModal";

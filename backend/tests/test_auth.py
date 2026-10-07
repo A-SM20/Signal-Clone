@@ -70,3 +70,18 @@ def test_first_device_is_primary(client):
         return [d.is_primary for d in (await session.execute(select(Device).order_by(Device.id))).scalars()]
 
     assert db_call(client, flags) == [True, False]
+
+
+def test_default_pin_until_a_custom_pin_is_set(client):
+    s = login(client, "+15550100001", "Alice")
+    assert _verify(client, "+15550100001", "123456").status_code == 200  # default PIN
+    assert client.patch("/api/me", json={"pin": "4321"}, headers=s.headers).status_code == 200
+    assert client.get("/api/me", headers=s.headers).json()["has_pin"] is True
+    assert _verify(client, "+15550100001", "4321").status_code == 200
+    r = _verify(client, "+15550100001", "123456")  # the default no longer unlocks this account
+    assert r.status_code == 400 and r.json()["error"]["code"] == "invalid_otp"
+
+
+def test_non_ascii_pin_is_just_wrong(client):
+    login(client, "+15550100001", "Alice")
+    assert _verify(client, "+15550100001", "１２３４５６").status_code == 400
